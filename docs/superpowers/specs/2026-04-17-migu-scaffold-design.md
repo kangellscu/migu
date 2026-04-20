@@ -63,14 +63,16 @@ migu/                          # 项目根目录（独立仓库）
 │   │   │   references/
 │   │   │       templates/
 │   │   │
-│   │   kb-compile/            # 编译
+│   │   kb-compile/            # 编译（完全 LLM）
 │   │   │   SKILL.md
 │   │   │   scripts/
-│   │   │   │   extract_entities.py
-│   │   │   │   generate_wiki.py
-│   │   │   │   update_index.py
+│   │   │   │   read_file.py       # 根据产物路径读取文件
+│   │   │   │   update_registry.py # 更新 raw-registry.md
 │   │   │   references/
-│   │   │       templates/
+│   │   │       templates/         # 约束 wiki 输出格式
+│   │   │       │   person-template.md
+│   │   │       │   place-template.md
+│   │   │       │   event-template.md
 │   │   │
 │   │   kb-lint/               # Wiki 检查
 │   │   │   SKILL.md
@@ -105,14 +107,13 @@ migu/                          # 项目根目录（独立仓库）
 │   │   │   │   format_dashboard.py
 │   │
 │   history/                   # 历史知识库定制
-│   │   kb-compile/            # 历史文档编译
+│   │   kb-compile/            # 历史文档编译（完全 LLM）
 │   │   │   SKILL.md
 │   │   │   scripts/
-│   │   │   │   extract_entities.py
-│   │   │   │   generate_wiki.py
-│   │   │   │   update_index.py
+│   │   │   │   read_file.py       # 根据产物路径读取文件
+│   │   │   │   update_registry.py # 更新 raw-registry.md
 │   │   │   references/
-│   │   │       templates/
+│   │   │       templates/         # 历史文档定制模板
 │   │   │       │   person-template.md
 │   │   │       │   place-template.md
 │   │   │       │   event-template.md
@@ -221,7 +222,7 @@ migu/                          # 项目根目录（独立仓库）
 | skill | 职责 | scripts |
 |-------|------|---------|
 | kb-ingest | 扫描 raw/、预处理文件、输出到 raw/.extracted/ | scan_raw.py, validate_batch.py, normalize_markdown.py, convert_pdf.py |
-| kb-compile | 读取 raw/.extracted/、提取实体、生成 wiki 页面 | extract_entities.py, generate_wiki.py, update_index.py |
+| kb-compile | 读取文件、提取实体、生成 wiki 页面（完全 LLM） | read_file.py, update_registry.py |
 | kb-lint | Wiki 检查（语法、语义、修复） | lint.py, syntax.py, semantic.py, fix.py |
 | kb-query | Wiki 查询 | 无（依赖 references） |
 | kb-archive | 回写查询结果（新建报告或更新现有页面） | create_report.py, update_page.py |
@@ -536,12 +537,12 @@ raw 文件注册表，kb-ingest 和 kb-compile 共同维护。
 ```markdown
 # Raw File Registry
 
-| 文件 | 类型 | 摘要 | 预处理状态 | 编译状态 | 最近处理日期 |
-|------|------|------|-----------|---------|-------------|
-| [[raw/史记/本纪/高祖本纪.md\|史记·本纪·高祖本纪]] | markdown | 记载刘邦生平及汉朝建立 | 已处理 | 已编译 | 2026-04-17 |
-| [[raw/史记/assets/刘邦画像.png\|刘邦画像]] | image | 刘邦画像（汉代） | 无需处理 | 已引用 | 2026-04-16 |
-| [[raw/史记/本纪/项羽本纪.md\|史记·本纪·项羽本纪]] | markdown | - | 未处理 | 未编译 | - |
-| [[raw/某书/chapter1.pdf\|某书·第一章]] | pdf | - | 已处理 | 未编译 | 2026-04-17 |
+| 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编译状态 | 最近处理日期 |
+|------|------|------|-----------|---------|---------|-------------|
+| [[raw/史记/本纪/高祖本纪.md\|史记·本纪·高祖本纪]] | markdown | 记载刘邦生平及汉朝建立 | 已处理 | raw/.extracted/史记/本纪/高祖本纪.md | 已编译 | 2026-04-17 |
+| [[raw/史记/本纪/项羽本纪.md\|史记·本纪·项羽本纪]] | markdown | - | 已处理 | - | 未编译 | - |
+| [[raw/史记/assets/刘邦画像.png\|刘邦画像]] | image | 刘邦画像（汉代） | 无需处理 | - | 已引用 | 2026-04-16 |
+| [[raw/某书/chapter1.pdf\|某书·第一章]] | pdf | - | 已处理 | raw/.extracted/某书/chapter1.md | 未编译 | 2026-04-17 |
 ```
 
 **字段说明：**
@@ -552,16 +553,17 @@ raw 文件注册表，kb-ingest 和 kb-compile 共同维护。
 | 类型 | 文件格式（markdown、pdf、image） | kb-ingest |
 | 摘要 | 内容摘要（可选） | kb-ingest |
 | 预处理状态 | kb-ingest 处理状态 | kb-ingest |
+| 产物路径 | 主产物路径（有产物时记录，无产物时为 `-`） | kb-ingest |
 | 编译状态 | kb-compile 编译状态 | kb-compile |
 | 最近处理日期 | 最后处理时间 | kb-ingest/kb-compile |
 
 **状态定义：**
 
-| 预处理状态 | 说明 |
-|-----------|------|
-| 未处理 | raw 文件已添加，kb-ingest 未执行 |
-| 已处理 | 已输出到 raw/.extracted/ |
-| 无需处理 | image 等文件，直接引用 |
+| 预处理状态 | 说明 | 产物路径 |
+|-----------|------|---------|
+| 未处理 | raw 文件已添加，kb-ingest 未执行 | `-` |
+| 已处理 | 已预处理，可能有产物 | 有产物时记录路径，无产物时 `-` |
+| 无需处理 | image 文件，直接引用 | `-` |
 
 | 编译状态 | 说明 |
 |---------|------|
@@ -570,7 +572,39 @@ raw 文件注册表，kb-ingest 和 kb-compile 共同维护。
 | 部分编译 | 部分实体已提取，未完成 |
 | 已引用 | image 文件被 wiki 页面引用 |
 
-### 6.4 skills-lock.json
+### 6.4 wiki 文档格式
+
+wiki 文档由 kb-compile 生成，存放在 `wiki/` 目录下。
+
+**标准结构：**
+
+```markdown
+# 刘邦
+
+## 基本信息
+- 别名：高祖、沛公、刘季
+- 出生地：[[沛丰邑中阳里]]
+- 父亲：[[刘太公]]
+- 母亲：[[刘媪]]
+
+## 生平
+...
+
+## 相关事件
+- [[陈涉起义]]
+- [[楚汉之争]]
+
+## 来源
+source: [[raw/史记/本纪/高祖本纪.md]]
+```
+
+**source 字段说明：**
+
+- 指向 raw 文件（原始出处），而非 .extracted/ 产物
+- 语义：用户视角的原始来源追溯
+- 格式：wikilink（便于 Obsidian 导航）
+
+### 6.5 skills-lock.json
 
 安装时记录 skill 版本信息：
 
@@ -629,11 +663,14 @@ raw 文件注册表，kb-ingest 和 kb-compile 共同维护。
 1. **扫描 raw/ 目录**：检测所有文件（递归）
 2. **对比 raw-registry.md**：找出未记录的文件，添加新条目（预处理状态：未处理）
 3. **处理文件**：
-   - markdown：调用 normalize_markdown.py → 输出到 `raw/.extracted/`
-   - pdf：调用 convert_pdf.py → 输出 markdown + 图片到 `raw/.extracted/`
-   - image：标记为"无需处理"，不生成 .extracted 文件
+   - markdown：
+     - 无需预处理：标记为"已处理"，产物路径 `-`
+     - 需预处理（编码修复/图片下载）：调用 normalize_markdown.py → 输出到 `raw/.extracted/`，记录产物路径
+   - pdf：调用 convert_pdf.py → 输出 markdown + 图片到 `raw/.extracted/`，记录产物路径
+   - image：标记为"无需处理"，产物路径 `-`
 4. **更新 raw-registry.md**：
    - 预处理状态：已处理 / 无需处理
+   - 产物路径：有产物时记录路径，无产物时 `-`
    - 最近处理日期：当前日期
 
 ### 7.2 类型判断
@@ -642,25 +679,85 @@ raw 文件注册表，kb-ingest 和 kb-compile 共同维护。
 
 | 扩展名 | 类型 | 处理方式 |
 |--------|------|---------|
-| .md | markdown | 规范化 → raw/.extracted/ |
+| .md | markdown | 规范化检查 → 可能生成 raw/.extracted/（编码修复/图片下载时） |
 | .pdf | pdf | 转 markdown + 提取图片 → raw/.extracted/ |
 | .png, .jpg, .gif | image | 无需处理，直接引用 |
+
+### 7.3 markdown 预处理场景
+
+| 场景 | 产物路径 | 说明 |
+|------|---------|------|
+| 无需预处理 | `-` | 文件格式规范，编码正常，无 http 图片 |
+| 编码修复 | raw/.extracted/... | 文件名或内容含特殊编码，规范化后输出 |
+| 图片下载 | raw/.extracted/... | 含 http 图片，下载到本地，更新链接后输出 |
 
 ---
 
 ## 8. kb-compile 执行流程
 
+kb-compile 采用完全 LLM 方案：实体提取和 wiki 生成均由 agent（LLM）完成。
+
 ### 8.1 流程步骤
 
-1. **读取 raw/.extracted/ 目录**：获取已预处理文件
-2. **对比 raw-registry.md**：找出"已处理"但"未编译"的文件
-3. **提取实体**：调用 extract_entities.py 识别实体/概念
-4. **生成 wiki 页面**：调用 generate_wiki.py 创建 wiki 文档
-   - wiki 文档头部包含 `source: [[raw/...]]` 指向原始文件
+1. **读取 raw-registry.md**：筛选需编译文件（预处理状态 != 未处理 且 编译状态 != 已编译/已引用）
+2. **读取文件内容**：
+   - 产物路径 != `-`：读取产物路径对应文件
+   - 产物路径 == `-`：读取 raw 文件本身
+3. **LLM 实体提取**：
+   - 阅读 document 内容
+   - 提取实体：人物、地点、事件、制度等
+   - 识别关系、消歧别名
+   - 参考 references/templates/ 约束输出格式
+4. **LLM wiki 生成**：
+   - 检查 wiki/ 是否已有对应实体文档
+   - 无：根据 templates 创建新文档
+   - 有：阅读现有内容，合并新信息（增量更新）
+   - wiki 文档 source 字段指向 raw 文件
 5. **更新 index.md**：添加新页面索引
 6. **更新 raw-registry.md**：
    - 编译状态：已编译 / 部分编译
    - 最近处理日期：当前日期
+
+### 8.2 增量更新逻辑
+
+当 wiki/ 已存在同名实体文档时：
+
+| 场景 | LLM 处理方式 |
+|------|-------------|
+| 信息补充 | 追加新字段或补充现有字段内容 |
+| 信息冲突 | 判断是否同一信息的不同表述，或保留冲突注释 |
+| 关系去重 | 判断两个关系是否重复，合并 |
+| 结构调整 | 根据信息量调整页面结构 |
+
+### 8.3 重新编译意图识别
+
+SKILL.md 包含意图分支逻辑：
+
+| 用户意图 | 执行方式 |
+|---------|---------|
+| 默认编译 | 筛选"已处理但未编译"的文件 |
+| 重新编译（指定文件） | 直接编译指定文件，忽略编译状态 |
+| 重新编译（表达意图） | 如用户说"重新编译刘邦"，识别后强制执行 |
+
+### 8.4 SKILL.md 结构示例
+
+```
+## kb-compile 执行流程
+
+1. 识别用户意图：
+   - 默认编译：筛选预处理完成但未编译的文件
+   - 重新编译：用户指定文件或表达"重新编译"意图
+
+2. 根据产物路径读取文件内容
+
+3. 阅读文档，提取实体（人物、地点、事件等）
+
+4. 检查 wiki/ 是否已有对应实体：
+   - 无：根据 templates 创建新文档
+   - 有：阅读现有内容，合并新信息
+
+5. 更新 index.md 和 raw-registry.md
+```
 
 ---
 
