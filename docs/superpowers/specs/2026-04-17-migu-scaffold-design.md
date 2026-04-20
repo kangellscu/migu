@@ -84,20 +84,24 @@ migu/                          # 项目根目录（独立仓库）
 │   │   │   references/
 │   │   │       rules.md
 │   │   │
-│   │   kb-query/              # Wiki 查询
-│   │   │   SKILL.md
-│   │   │   references/
-│   │   │       intent-patterns.md
-│   │   │       templates/
-│   │   │
-│   │   kb-archive/            # 回写
+│   │   kb-query/              # Wiki 查询（含回溯模式）
 │   │   │   SKILL.md
 │   │   │   scripts/
-│   │   │   │   create_report.py
-│   │   │   │   update_page.py
+│   │   │   │   search_wiki.py     # 搜索 wiki 目录
+│   │   │   references/
+│   │   │       intent-patterns.md # 查询意图模式 + 回溯关键词
+│   │   │       templates/
+│   │   │       │   report-template.md  # report 输出模板
+│   │   │
+│   │   kb-archive/            # 回写（有机融入）
+│   │   │   SKILL.md
+│   │   │   scripts/
+│   │   │   │   read_report.py     # 读取 report
+│   │   │   │   create_synthesis.py # 创建 synthesis 文件
+│   │   │   │   update_entity.py   # 有机融入回写
 │   │   │   references/
 │   │   │       templates/
-│   │   │       │   report-template.md
+│   │   │       │   synthesis-template.md # synthesis 报告模板
 │   │   │
 │   │   kb-status/             # 仪表盘
 │   │   │   SKILL.md
@@ -224,8 +228,8 @@ migu/                          # 项目根目录（独立仓库）
 | kb-ingest | 扫描 raw/、预处理文件、输出到 raw/.extracted/ | scan_raw.py, validate_batch.py, normalize_markdown.py, convert_pdf.py |
 | kb-compile | 读取文件、提取实体、生成 wiki 页面（完全 LLM） | read_file.py, update_registry.py |
 | kb-lint | Wiki 检查（语法、语义、修复） | lint.py, syntax.py, semantic.py, fix.py |
-| kb-query | Wiki 查询 | 无（依赖 references） |
-| kb-archive | 回写查询结果（新建报告或更新现有页面） | create_report.py, update_page.py |
+| kb-query | Wiki 查询 + 回溯模式 + 生成 report | search_wiki.py |
+| kb-archive | 接收 report + 回写摘要 + 有机融入 | read_report.py, create_synthesis.py, update_entity.py |
 | kb-status | 展示知识库仪表盘 | scan_registry.py, scan_wiki.py, format_dashboard.py |
 
 **无依赖关系**：各 skill 独立运作。kb-ingest 输出是 kb-compile 输入，但无声明依赖，用户手动编排顺序。
@@ -598,11 +602,14 @@ wiki 文档由 kb-compile 生成，存放在 `wiki/` 目录下。
 source: [[raw/史记/本纪/高祖本纪.md]]
 ```
 
-**source 字段说明：**
+**source 字段规范：**
 
-- 指向 raw 文件（原始出处），而非 .extracted/ 产物
-- 语义：用户视角的原始来源追溯
-- 格式：wikilink（便于 Obsidian 导航）
+| 规则 | 说明 |
+|------|------|
+| 必须包含 | 每个 wiki 文档必须有 source 字段 |
+| 指向 raw | 指向原始 raw 文件（原始出处），而非 .extracted/ 产物 |
+| wikilink 格式 | 便于 Obsidian 导航 |
+| 回溯依赖 | kb-query 回溯模式通过此字段定位 raw 文件 |
 
 ### 6.5 skills-lock.json
 
@@ -765,29 +772,188 @@ SKILL.md 包含意图分支逻辑：
 
 ### 9.1 kb-query 流程
 
+kb-query 输出 report（符合模板格式），供 kb-archive 执行。
+
+#### 流程步骤
+
 1. **接收查询意图**：用户提出问题（如"刘邦的社交关系网络"）
-2. **解析意图**：根据 references/intent-patterns.md 判断查询类型
-3. **搜索 wiki/ 目录**：匹配相关文档
-4. **聚合结果**：汇总查询结果，呈现给用户
-5. **不修改 wiki**：kb-query 只查询，不回写
+
+2. **解析意图**：
+   - 查询对象：实体类型（人物、地点、事件、关系）
+   - 查询范围：单实体、多实体、全库、时间限定
+   - 查询方式：关键词匹配、语义搜索、关系遍历
+   - 输出格式：文档列表、关系图、时间线、对比表格
+   - 检测回溯关键词（见下文）
+
+3. **【含回溯关键词】询问用户**：
+   ```
+   检测到回溯关键词，是否需要回溯 raw 文件？
+   (yes → 回溯模式 / no → 标准模式)
+   ```
+
+4. **搜索 wiki/ 目录**：根据意图选择搜索策略，匹配相关文档
+
+5. **聚合结果**：汇总查询结果
+
+6. **【查询结果为空】输出提示并终止**：
+   ```
+   未找到相关实体，建议检查 raw 是否已 compile
+   ```
+
+7. **根据模式执行**：
+
+   **标准模式**：
+   - 检测疑似缺失（关系不对称、信息稀疏）
+
+   **回溯模式**：
+   - 识别相关 raw（通过 entities 的 source 字段）
+   - 检查回溯范围限制：
+     - 数量限制：最多 5 个 raw 文件
+     - 大小限制：单文件超过 50KB 提示用户确认
+   - 回溯 raw 文件
+   - LLM 提取未提取信息
+
+8. **生成 report**（符合 report-template.md）
+
+9. **【标准模式】输出疑似缺失提示**：
+   ```
+   疑似缺失提示：
+   - [[萧何]] 信息稀疏，建议重新 compile raw/史记/本纪/高祖本纪.md
+   
+   是否立即重新 compile？(yes/no)
+   ```
+
+10. **呈现 report**
+
+#### 回溯关键词
+
+| 关键词 | 示例查询 |
+|--------|---------|
+| 回溯 | 回溯分析刘邦的社交网络 |
+| 全面 | 全面梳理楚汉之争的关键人物 |
+| 详细 | 详细考察萧何的政治生涯 |
+| 完整 | 完整还原刘邦的早期经历 |
+| 补充 | 补充刘邦与萧何的关系细节 |
+| 溯源 | 溯源刘邦早期经历的原始记载 |
+
+#### 回溯范围限制
+
+| 限制类型 | 规则 | 超出处理 |
+|---------|------|---------|
+| 数量限制 | 最多回溯 5 个 raw 文件 | 提示用户选择优先回溯哪些 |
+| 大小限制 | 单文件不超过 50KB | 提示用户确认是否处理 |
+
+#### 边界情况处理
+
+| 场景 | 输出 |
+|------|------|
+| wiki 无相关实体 | "未找到相关实体，建议检查 raw 是否已 compile" |
+| 回溯无新发现 | "raw 回溯完成，无新发现信息" |
+
+#### report 输出格式
+
+report 符合 report-template.md 结构：
+
+```markdown
+# {{title}}
+
+## 分析
+{{analysis}}
+
+【回溯模式额外】
+### 回溯新发现
+从 raw/xxx.md 发现：
+- 信息A（未提取）
+- 信息B（未提取）
+
+## 结论
+{{conclusion}}
+
+## 相关实体
+[[entity1]], [[entity2]], ...
+
+## 回写建议
+- 补充 [[entity]]：内容描述（来源：wiki/entities/xxx.md 或 raw/xxx.md）
+```
+
+---
 
 ### 9.2 kb-archive 流程
 
-kb-archive 接收 kb-query 结果的方式：用户在 kb-query 执行后，将查询结果（文档路径、实体列表、关系图等）作为上下文传递给 agent，然后触发 kb-archive。
+kb-archive 接收 kb-query 的 report，执行回写建议。
 
-**流程步骤：**
+#### 流程步骤
 
-1. **接收查询结果**：用户传递 kb-query 的结果作为上下文
-2. **检查 synthesis/ 目录**：是否存在相似主题文档
-3. **如存在相似文档**：询问用户（新建 or 更新）
+1. **接收 report**：kb-query 生成的 report 作为上下文
+
+2. **解析回写建议**：提取 report 中的回写建议列表
+
+3. **生成回写摘要**：
    ```
-   Found similar document: synthesis/刘邦关系网络.md
-   Create new report or update existing? (new/update)
+   ## 回写摘要
+   
+   ### 补充 [[萧何]]
+   位置：相关人物 section
+   内容：添加"推荐刘邦担任亭长"
+   ---
+   原文：萧何与刘邦关系密切
+   更新后：萧何与刘邦关系密切，曾向沛公推荐刘邦担任亭长
+   
+   ### 补充 [[曹参]]
+   位置：生平 section
+   内容：添加早期与刘邦相识
+   ---
+   原文：曹参随刘邦起兵
+   更新后：曹参早年与刘邦同在沛县服役，后随刘邦起兵
+   
+   是否执行回写？(yes/no/selective)
    ```
-4. **执行回写**：
-   - 新建报告：调用 create_report.py → `synthesis/<主题>.md`
-   - 更新现有：调用 update_page.py → 补充信息到相关 wiki 页面
-5. **更新 index.md**：添加新报告索引（如新建）
+
+4. **询问用户是否执行回写**：
+   - `yes`：执行所有回写建议
+   - `no`：只创建 synthesis 报告，不执行回写
+   - `selective`：逐个确认每条回写建议
+
+5. **根据用户选择执行**：
+   - 创建 synthesis/*.md（写入 report，不含回写建议）
+   - 执行回写建议：有机融入 wiki 实体文档
+
+6. **更新 index.md**：添加新报告索引
+
+#### 有机融入逻辑
+
+回写采用有机融入，而非简单追加：
+
+| 场景 | 简单追加（错误） | 有机融入（正确） |
+|------|-----------------|-----------------|
+| 补充关系 | 文末追加"推荐刘邦" | 在"相关人物"section 融入萧何→刘邦关系 |
+| 补充事件 | 文末追加事件描述 | 在"生平"section 按时间顺序插入 |
+| 补充属性 | 文末追加"出生地：沛县" | 在"基本信息"section 补充或确认出生地字段 |
+
+有机融入由 LLM 执行：
+- 阅读现有 wiki 文档内容和结构
+- 阅读回写建议中的新内容
+- LLM 判断：新内容应融入哪个 section
+- 融合写入：补充、合并、或插入到合适位置
+
+#### synthesis 报告格式
+
+synthesis 报告符合 synthesis-template.md 结构：
+
+```markdown
+# {{title}}
+
+## 分析
+{{analysis}}
+
+## 结论
+{{conclusion}}
+
+## 相关实体
+[[entity1]], [[entity2]], ...
+```
+
+注：synthesis 报告不含"回写建议"section（回写建议已由 kb-archive 执行）。
 
 ---
 
@@ -935,6 +1101,18 @@ migu 是 Git 管理的独立仓库：
 - 用户可选择是否升级，不强制
 - 显示具体版本差异，用户知情决策
 - reinstall 时检测修改并显示 diff，保护用户定制
+
+### 15.7 kb-query 回溯模式
+
+**选择：有限支持回溯（关键词触发 + 用户确认 + 范围限制）**
+
+理由：
+- 标准模式保持高效（只查 wiki，无 raw 回溯）
+- 回溯模式满足深度需求（发现 raw 中未提取信息）
+- 关键词触发避免误执行（用户表达回溯意图）
+- 用户确认确保意图准确（避免关键词歧义）
+- 范围限制控制资源消耗（最多 5 文件，单文件 50KB）
+- wiki 文档 source 字段依赖：回溯通过 source 定位 raw
 
 ---
 
