@@ -121,15 +121,23 @@ migu/                          # 项目根目录（独立仓库）
 │   │   │       entity-patterns.md
 │
 ├── rules/                     # 知识库规则定义
-│   minimal/                   # 基础结构规则（默认）
+│   minimal/                   # 基础结构规则（完整）
 │   │   AGENTS.md
 │   │   structure.json
 │   │   skills.json
+│   │   templates/
+│   │       index.md
+│   │       log.md
+│   │       raw-registry.md
 │   │
-│   history/                   # 历史知识库规则
-│   │   AGENTS.md
-│   │   structure.json
-│   │   skills.json
+│   history/                   # 历史知识库规则（继承 + 覆盖 minimal）
+│   │   AGENTS.md              # 覆盖
+│   │   skills.json            # 完整覆盖
+│   │   # structure.json → 继承 minimal
+│   │   templates/
+│   │       index.md           # 覆盖（如有差异）
+│   │       # log.md → 继承 minimal
+│   │       # raw-registry.md → 继承 minimal
 │
 └── tests/                     # 测试用例
     ├── test_cli.py
@@ -233,12 +241,27 @@ migu/                          # 项目根目录（独立仓库）
 
 ### 4.1 rules 目录组织
 
-与 skills 目录组织一致：按类型分组。
+采用"基础 + 覆盖"模式：
+
+- **minimal**：基础规则，包含完整配置
+- **其他规则**：继承 minimal，只包含差异文件
 
 ```
 rules/
-  minimal/     # 基础知识库规则
-  history/     # 历史知识库规则
+  minimal/                   # 基础知识库规则（完整）
+    AGENTS.md
+    structure.json
+    skills.json
+    templates/
+      index.md
+      log.md
+      raw-registry.md
+
+  history/                   # 历史知识库规则（继承 + 覆盖）
+    AGENTS.md                # 覆盖
+    skills.json              # 完整覆盖
+    templates/
+      index.md               # 覆盖（如有差异）
 ```
 
 ### 4.2 配置文件
@@ -253,7 +276,7 @@ rules/
 
 #### structure.json
 
-定义目录结构和初始文件：
+定义目录结构：
 
 ```json
 {
@@ -262,26 +285,24 @@ rules/
       ".extracted": {}
     },
     "wiki": {
-      "entities": {
-        "people": {},
-        "places": {},
-        "events": {}
-      },
-      "concepts": {
-        "institutions": {},
-        "ideas": {}
-      },
+      "entities": {},
+      "concepts": {},
       "synthesis": {}
     },
     "output": {}
-  },
-  "files": {
-    "index.md": {"content": "# Wiki Index\n"},
-    "log.md": {"content": "# Knowledge Base Log\n"},
-    "raw-registry.md": {"content": "# Raw File Registry\n\n| 文件 | 类型 | 摘要 | 预处理状态 | 编译状态 | 最近处理日期 |\n|------|------|------|-----------|---------|-------------|\n"}
   }
 }
 ```
+
+#### templates/
+
+存放初始文件的内容模板：
+
+- **index.md**：wiki 文档索引模板
+- **log.md**：操作日志模板
+- **raw-registry.md**：raw 文件注册表模板（含表格结构）
+
+模板文件直接复制到知识库根目录，不同规则可通过覆盖模板定制初始内容。
 
 #### skills.json
 
@@ -365,6 +386,27 @@ rules/
 }
 ```
 
+### 4.3 继承规则
+
+非 minimal 规则继承 minimal 的配置，只覆盖差异部分：
+
+| 文件/目录 | 继承行为 |
+|----------|---------|
+| AGENTS.md | 存在则覆盖，不存在则继承 minimal |
+| skills.json | 存在则完整覆盖（需包含全部 skills 配置），不存在则继承 minimal |
+| structure.json | 存在则覆盖，不存在则继承 minimal |
+| templates/*.md | 同名文件覆盖，不存在则继承 minimal/templates/ 对应文件 |
+
+**继承示例：**
+
+history 规则只需要定制 kb-compile 的实体提取模板，因此：
+- AGENTS.md：覆盖（schema 不同）
+- skills.json：完整覆盖（kb-compile source 不同）
+- structure.json：不提供，继承 minimal（目录结构相同）
+- templates/index.md：覆盖（索引格式可能不同）
+- templates/log.md：不提供，继承 minimal
+- templates/raw-registry.md：不提供，继承 minimal
+
 ---
 
 ## 5. CLI 命令设计
@@ -381,13 +423,18 @@ migu init <target-dir> [--rules <rules-name>]
 
 **执行流程：**
 1. 检查 `<target-dir>` 是否存在
-2. 创建目录结构（根据 rules/*/structure.json）
-3. 复制 rules/*/AGENTS.md → `<target-dir>/AGENTS.md`
+2. 合并配置（继承 minimal + 覆盖指定 rules）：
+   - structure.json：minimal 为基础，rules 覆盖
+   - AGENTS.md：minimal 为基础，rules 覆盖
+   - skills.json：minimal 为基础，rules 完整覆盖
+3. 创建目录结构（根据合并后的 structure.json）
 4. 创建 `raw/.extracted/` 目录结构
-5. 安装 skills：
+5. 安装 skills（根据合并后的 skills.json）：
    - 复制 `skills/<source>/<name>` → `<target-dir>/.agents/skills/<name>`
    - 创建 skills-lock.json
-6. 创建初始文件（index.md、log.md、raw-registry.md）
+6. 复制模板文件（继承 minimal/templates + 覆盖 rules/templates）：
+   - 合并 templates 目录内容
+   - 复制到 `<target-dir>/`（index.md、log.md、raw-registry.md）
 
 **输出示例：**
 ```
