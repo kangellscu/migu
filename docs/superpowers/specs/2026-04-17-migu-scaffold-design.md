@@ -106,9 +106,9 @@ migu/                          # 项目根目录（独立仓库）
 │   │   kb-status/             # 仪表盘
 │   │   │   SKILL.md
 │   │   │   scripts/
-│   │   │   │   scan_registry.py
-│   │   │   │   scan_wiki.py
-│   │   │   │   format_dashboard.py
+│   │   │   │   read_registry.py    # 解析 raw-registry.md
+│   │   │   │   read_index.py      # 解析 index.md
+│   │   │   │   format_dashboard.py # 格式化仪表盘输出
 │   │
 │   history/                   # 历史知识库定制
 │   │   kb-compile/            # 历史文档编译（完全 LLM）
@@ -230,7 +230,7 @@ migu/                          # 项目根目录（独立仓库）
 | kb-lint | Wiki 检查（语法、语义、修复） | lint.py, syntax.py, semantic.py, fix.py |
 | kb-query | Wiki 查询 + 回溯模式 + 生成 report | search_wiki.py |
 | kb-archive | 接收 report + 回写摘要 + 有机融入 | read_report.py, create_synthesis.py, update_entity.py |
-| kb-status | 展示知识库仪表盘 | scan_registry.py, scan_wiki.py, format_dashboard.py |
+| kb-status | 展示知识库仪表盘（解析 index.md + raw-registry.md） | read_registry.py, read_index.py, format_dashboard.py |
 
 **无依赖关系**：各 skill 独立运作。kb-ingest 输出是 kb-compile 输入，但无声明依赖，用户手动编排顺序。
 
@@ -299,15 +299,84 @@ rules/
 }
 ```
 
+**使用时机：**
+
+| 阶段 | 是否使用 | 说明 |
+|------|---------|------|
+| migu init | ✓ 使用 | 创建知识库目录结构 |
+| kb-compile | ✗ 不使用 | 目录已存在，实体类型→目录映射由 SKILL.md 定义 |
+
+**隐含约束：**
+
+structure.json wiki 目录结构需与 kb-compile SKILL.md 实体类型→目录映射一致。rules 设计者需确保三者匹配：
+- structure.json wiki 目录
+- kb-compile SKILL.md 映射
+- index.md sections
+
 #### templates/
 
-存放初始文件的内容模板：
+存放初始文件的内容模板，migu init 复制到知识库根目录。
 
-- **index.md**：wiki 文档索引模板
-- **log.md**：操作日志模板
-- **raw-registry.md**：raw 文件注册表模板（含表格结构）
+**templates/index.md：**
 
-模板文件直接复制到知识库根目录，不同规则可通过覆盖模板定制初始内容。
+```markdown
+# Wiki Index
+
+<!-- 
+entry format: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD
+sections 对应 structure.json wiki 目录结构
+-->
+
+<!-- 以下 section 由 migu init 根据 structure.json 动态生成 -->
+```
+
+migu init 根据 structure.json wiki 目录动态生成 sections，每个 section 添加 entry 注释。
+
+**templates/log.md：**
+
+```markdown
+# Knowledge Base Log
+
+<!-- 
+entry format: ## [YYYY-MM-DD] operation | details
+operation: ingest | compile | archive | lint
+query 和 status 不记录
+-->
+
+<!-- 操作日志由 kb-ingest/compile/archive/lint 自动追加 -->
+```
+
+**templates/raw-registry.md：**
+
+```markdown
+# Raw File Registry
+
+<!-- 
+entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编译状态 | 最近处理日期 |
+
+字段格式说明：
+- 文件：wikilink 格式，如 [[raw/史记/本纪/高祖本纪.md\|史记·本纪·高祖本纪]]
+- 类型：markdown | pdf | image
+- 摘要：内容简述，可选
+- 预处理状态：未处理 | 已处理 | 无需处理
+- 产物路径：相对路径（以知识库根目录为 root），如 raw/.extracted/史记/本纪/高祖本纪.md；无产物时为 `-`
+- 编译状态：未编译 | 已编译 | 部分编译 | 已引用
+- 最近处理日期：YYYY-MM-DD 格式，未处理时为 `-`
+-->
+
+| 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编译状态 | 最近处理日期 |
+|------|------|------|-----------|---------|---------|-------------|
+```
+
+**entry format 注释作用：**
+
+| 作用 | 说明 |
+|------|------|
+| LLM 理解格式 | kb-compile/archive 创建 entry 时参考注释模板 |
+| 格式一致性 | 所有 entry 符合统一格式 |
+| 字段说明 | 明确每个字段的格式和可选值 |
+
+不同规则可通过覆盖模板定制初始内容。
 
 #### skills.json
 
@@ -438,8 +507,12 @@ migu init <target-dir> [--rules <rules-name>]
    - 复制 `skills/<source>/<name>` → `<target-dir>/.agents/skills/<name>`
    - 创建 skills-lock.json
 6. 复制模板文件（继承 minimal/templates + 覆盖 rules/templates）：
-   - 合并 templates 目录内容
-   - 复制到 `<target-dir>/`（index.md、log.md、raw-registry.md）
+   - log.md：直接复制模板
+   - raw-registry.md：直接复制模板
+   - index.md：动态生成
+     - 复制 templates/index.md 头部注释
+     - 根据 structure.json wiki 目录动态生成 sections
+     - 每个 section 添加 entry 注释
 
 **输出示例：**
 ```
@@ -524,13 +597,83 @@ migu --help           # 显示帮助
 
 wiki 文档索引，kb-compile 创建 wiki 页面时更新，kb-archive 创建报告时更新。
 
-格式由 AGENTS.md 定义。
+**生成方式：**
+
+| 阶段 | 操作 |
+|------|------|
+| migu init | 根据 structure.json wiki 目录动态生成 sections |
+| kb-compile | 创建 wiki 页面后，在对应 section 添加 entry |
+| kb-archive | 创建 synthesis 报告后，在 synthesis section 添加 entry |
+
+**格式示例：**
+
+```markdown
+# Wiki Index
+
+<!-- 
+entry format: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD
+sections 对应 structure.json wiki 目录结构
+-->
+
+## entities
+<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
+- [[刘邦]] | 汉朝开国皇帝，沛县出身 | 更新: 2026-04-18
+- [[萧何]] | 汉初丞相，推荐刘邦 | 更新: 2026-04-17
+
+## concepts
+<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
+- [[沛县]] | 刘邦故乡，江苏北部 | 更新: 2026-04-17
+
+## synthesis
+<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
+- [[刘邦关系网络]] | 刘邦核心社交关系分析 | 更新: 2026-04-19
+```
+
+**字段说明：**
+
+| 字段 | 格式 | 说明 |
+|------|------|------|
+| section名 | 与 structure.json wiki 子目录名对应 | migu init 动态生成 |
+| 文档名 | wikilink | 链接到 wiki 文档 |
+| brief | 简短摘要 | kb-compile/archive 生成 |
+| 更新时间 | YYYY-MM-DD | 最近修改时间（非创建时间） |
+
+**隐含约束：**
+
+index.md sections 与 structure.json wiki 目录结构一致。kb-status 解析 index.md 获取 wiki 统计信息，无需扫描 wiki 目录。
 
 ### 6.2 log.md
 
 操作日志，每次操作后追加。
 
-格式：`## [YYYY-MM-DD] operation | details`
+**entry format：**
+
+```markdown
+## [YYYY-MM-DD] operation | details
+```
+
+**operation 标准值：**
+
+| operation | 说明 | 是否记录 |
+|-----------|------|---------|
+| ingest | 预处理 raw 文件 | ✓ 记录 |
+| compile | 编译生成 wiki | ✓ 记录 |
+| archive | 创建 synthesis + 回写 | ✓ 记录 |
+| lint | Wiki 检查 | ✓（有修复时记录） |
+| query | Wiki 查询 | ✗ 不记录 |
+| status | 展示仪表盘 | ✗ 不记录 |
+
+**格式示例：**
+
+```markdown
+# Knowledge Base Log
+
+## [2026-04-17] ingest | 处理 raw/史记/本纪/*.md，共 5 个文件
+
+## [2026-04-17] compile | 编译 raw/史记/本纪/高祖本纪.md → wiki/entities/刘邦.md
+
+## [2026-04-18] archive | 创建 synthesis/刘邦关系网络.md，回写 [[萧何]]、[[曹参]]
+```
 
 ### 6.3 raw-registry.md
 
@@ -961,16 +1104,24 @@ synthesis 报告符合 synthesis-template.md 结构：
 
 ### 10.1 流程步骤
 
-1. **解析 raw-registry.md**：统计文件数量、类型分布、处理状态
-2. **扫描 wiki/ 目录**：统计文档数量、分类分布
+1. **解析 raw-registry.md**：统计 raw 文件数量、类型分布、处理状态
+2. **解析 index.md**：统计 wiki 文档数量、分类分布、最近修改时间
 3. **查找最近活动**：
-   - 最近编译的 wiki 文档（按 processed_at 日期排序）
-   - 最近归档的 synthesis 文档（按文件修改时间）
-   - 最近预处理的 raw 文件（从 raw-registry.md）
-4. **查找待处理文件**：
+   - 最近修改 wiki：从 index.md 各 section 获取最新更新时间
+   - 最近预处理 raw：从 raw-registry.md 获取最新处理日期
+4. **查找待处理文件**：从 raw-registry.md
    - 预处理状态为"未处理"
    - 编译状态为"未编译"或"部分编译"
 5. **格式化输出**：调用 format_dashboard.py 生成文本仪表盘
+
+**信息来源：**
+
+| 信息 | 来源 | 说明 |
+|------|------|------|
+| raw 文件统计 | raw-registry.md | 数量、类型、状态 |
+| wiki 文档统计 | index.md | 数量、分类（不扫描 wiki 目录） |
+| 最近修改 wiki | index.md | 各 entry 的更新时间 |
+| 最近预处理 | raw-registry.md | 最近处理日期字段 |
 
 ### 10.2 输出格式
 
@@ -1113,6 +1264,32 @@ migu 是 Git 管理的独立仓库：
 - 用户确认确保意图准确（避免关键词歧义）
 - 范围限制控制资源消耗（最多 5 文件，单文件 50KB）
 - wiki 文档 source 字段依赖：回溯通过 source 定位 raw
+
+### 15.8 structure.json 与其他组件匹配约束
+
+**选择：rules 设计者需确保三者一致**
+
+三者需匹配：
+
+| 组件 | 内容 | 生成/定义时机 |
+|------|------|--------------|
+| structure.json | wiki 目录结构 | rules 定义 |
+| kb-compile SKILL.md | 实体类型 → 目录映射 | rules 定义 |
+| index.md | sections 分类 | migu init 根据 structure.json 生成 |
+
+**匹配示例：**
+
+| structure.json | kb-compile SKILL.md | index.md |
+|----------------|---------------------|----------|
+| wiki/entities/ | 人物 → entities/ | ## entities |
+| wiki/concepts/ | 概念 → concepts/ | ## concepts |
+| wiki/synthesis/ | synthesis | ## synthesis |
+
+**kb-compile 不读取 structure.json：**
+
+- 目录由 migu init 创建，已存在
+- kb-compile 通过 SKILL.md 映射决定实体放入哪个目录
+- rules 设计者需确保 SKILL.md 映射目标目录与 structure.json 一致
 
 ---
 
