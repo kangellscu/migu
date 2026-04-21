@@ -555,4 +555,4 @@ Knowledge Base Dashboard: my-kb/
 |--------|------|---------|---------|
 | read_registry.py | 解析 raw-registry.md | 步骤 1：统计 raw 文件状态 | 必须 |
 | read_index.py | 解析 index.md | 步骤 2：统计 wiki 文档状态 | 必须 |
-| format_dashboard.py | 格式化仪表盘输出 | 步骤 5：生成仪表盘 | 必须
+| format_dashboard.py | 格式化仪表盘输出 | 步骤 5：生成仪表盘 | 必须 |
