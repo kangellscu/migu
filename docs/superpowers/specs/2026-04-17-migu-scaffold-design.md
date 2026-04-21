@@ -3,12 +3,12 @@ title: Migu 脚手架项目设计文档
 created: 2026-04-17
 type: spec
 status: draft
-version: 2.1
+version: 2.2
 last_updated: 2026-04-21
-changes: 修订 skills.json 选择器概念、新增三方一致性验证、添加 report 交接机制、添加 index.md 迁移说明、新增 kb-lint 模板检查规则
+changes: 修订 skills.json 选择器概念、新增三方一致性验证、添加 report 交接机制、添加 index.md 迁移说明、新增 kb-lint 模板检查规则、新增 migu init 幂等性说明、新增 migu rules 命令（配置更新检测）、添加 frontmatter 版本追踪
 ---
 
-# Migu 脚架项目设计文档
+# Migu 脚手架项目设计文档
 
 ## 1. 项目定位
 
@@ -281,6 +281,27 @@ rules/
 - 引用格式
 - 操作规则
 
+**版本追踪（frontmatter）：**
+
+migu init 复制 AGENTS.md 到知识库根目录时，添加 frontmatter 用于版本追踪：
+
+```yaml
+---
+version: 1.0
+---
+# Knowledge Base Schema
+
+（内容...）
+```
+
+frontmatter 字段说明：
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| version | string | 配置文件版本号 |
+
+`migu rules list` 通过对比 frontmatter.version 与 migu 捆绑版本，检测是否需要更新。
+
 #### structure.json
 
 定义目录结构：
@@ -319,9 +340,27 @@ structure.json wiki 目录结构需与 kb-compile SKILL.md 实体类型→目录
 
 存放初始文件的内容模板，migu init 复制到知识库根目录。
 
+**版本追踪（frontmatter）：**
+
+templates/*.md 文件复制到知识库时，添加 frontmatter 用于版本追踪：
+
+```yaml
+---
+version: 1.0
+---
+# Wiki Index
+
+（内容...）
+```
+
+`migu rules list` 通过对比 frontmatter.version 与 migu 捆绑版本，检测是否需要更新。
+
 **templates/index.md：**
 
 ```markdown
+---
+version: 1.0
+---
 # Wiki Index
 
 <!-- 
@@ -337,6 +376,9 @@ migu init 根据 structure.json wiki 目录动态生成 sections，每个 sectio
 **templates/log.md：**
 
 ```markdown
+---
+version: 1.0
+---
 # Knowledge Base Log
 
 <!-- 
@@ -351,6 +393,9 @@ query 和 status 不记录
 **templates/raw-registry.md：**
 
 ```markdown
+---
+version: 1.0
+---
 # Raw File Registry
 
 <!-- 
@@ -506,7 +551,20 @@ migu init <target-dir> [--rules <rules-name>]
 - `--rules`：规则名称（minimal、history），默认 minimal
 
 **执行流程：**
-1. 检查 `<target-dir>` 是否存在
+1. 检查 `<target-dir>` 是否存在：
+   - 目录不存在：继续创建
+   - 目录已存在：报错退出
+     ```
+     ✗ 目录 my-kb/ 已存在
+     
+     migu init 不会覆盖已有目录，以保护知识库内容。
+     如需重新初始化，请：
+     - 删除目录后重新执行：rm -rf my-kb/ && migu init my-kb
+     - 或使用其他目录名：migu init my-kb-v2
+     
+     提示：使用 migu skill reinstall 可更新已安装的 skills，
+           使用 migu rules list 可检测配置文件更新。
+     ```
 2. **验证三方一致性**：
    - 检查 structure.json wiki 目录
    - 检查 rules 对应的 kb-compile SKILL.md 实体类型→目录映射
@@ -553,6 +611,17 @@ migu init <target-dir> [--rules <rules-name>]
 ✓ Created raw/.extracted/ directory
 ✓ Installed 6 skills: kb-ingest, kb-compile (from history), kb-lint, kb-query, kb-archive, kb-status
 ```
+
+**幂等性说明：**
+
+migu init 是幂等操作：
+- 重复执行同一命令会被拒绝
+- 已创建的知识库内容保持不变
+- 这保护了用户在知识库中的工作成果（wiki 文档、raw 文件、定制 skills）
+
+知识库更新机制：
+- skills 更新：`migu skill list` 检测 + `migu skill reinstall` 更新
+- rules 配置更新：`migu rules list` 检测 + 用户手动更新
 
 ### 5.2 migu skill
 
@@ -614,7 +683,68 @@ Installed skills in my-kb/:
 Run 'migu skill reinstall <name>' to upgrade outdated skills.
 ```
 
-### 5.3 版本命令
+### 5.3 migu rules
+
+```bash
+migu rules list <target-dir>
+```
+
+**migu rules list：**
+
+检测 rules 配置文件（AGENTS.md、templates/*.md）的版本更新状态。
+
+**检测机制：**
+
+| 文件 | 追踪方式 | Frontmatter | 检测触发 |
+|------|----------|-------------|----------|
+| AGENTS.md | frontmatter | `version: 1.0` | version 不一致 → diff |
+| templates/*.md | frontmatter | `version: 1.0` | version 不一致 → diff |
+| structure.json | 暂不追踪 | - | - |
+
+**检测逻辑：**
+
+1. 解析知识库文件的 frontmatter.version
+2. 根据 skills-lock.json 的 `rules` 字段，定位 migu 捆绑的 rules 目录
+3. 读取 rules 目录对应文件的 version
+4. version 不一致 → 输出 diff + 手动更新建议
+
+**输出示例：**
+```
+Rules configuration status in my-kb/:
+
+  AGENTS.md
+    installed: v1.0
+    migu bundled: v1.2 (rules/history)
+    ⚠ outdated
+    
+    Diff:
+    --- AGENTS.md (installed)
+    +++ AGENTS.md (migu v1.2)
+    @@ -15,6 +15,8 @@
+    + ## 新增约束
+    + - synthesis 文档必须包含 source 字段
+    
+    建议：手动更新知识库 AGENTS.md，或将 migu 捆绑版本内容复制到知识库。
+
+  templates/index.md
+    installed: v1.0
+    migu bundled: v1.0 (rules/minimal)
+    ✓ latest
+
+  templates/log.md
+    installed: v1.0
+    migu bundled: v1.0 (rules/minimal)
+    ✓ latest
+```
+
+**修改方式：**
+
+rules 配置文件由用户手动修改，migu 不自动更新：
+- 保护知识库的定制内容不被意外覆盖
+- 用户可选择部分采纳更新，而非全量覆盖
+- 符合知识库的可控性原则
+
+### 5.4 版本命令
 
 ```bash
 migu --version        # 显示版本
