@@ -644,7 +644,7 @@ raw 文件注册表，kb-ingest 和 kb-compile 共同维护。
 管理方式：
 - migu init 根据 structure.json 创建 output/ 目录
 - 目录内容由用户自行管理（不定义专门 skill）
-- 子目录结构由用户自定义（用户可自定义）
+- 子目录结构由用户自定义
 - migu 不追踪该目录内容状态（与 raw-registry.md 无关）
 
 用途示例（用户可自定义）：
@@ -696,7 +696,7 @@ scripts 解析 raw-registry.md 时需遵循：
 |----------|------|
 | 表格分隔符 | 第二行为 `|------|------|...` 格式 |
 | wikilink 解析 | `[[path\|alias]]` 格式，提取 path 部分 |
-| 状态字段 | 预处理状态、编译状态为枚举值（见 scaffold-design §4.1 raw-registry.md 状态定义表） |
+| 状态字段 | 预处理状态、编译状态为枚举值（见本 spec §4.1 raw-registry.md 状态定义表） |
 | 日期格式 | YYYY-MM-DD 格式 |
 | 空字段 | `-` 表示无值 |
 
