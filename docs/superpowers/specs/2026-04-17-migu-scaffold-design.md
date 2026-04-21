@@ -1,9 +1,11 @@
 ---
-title: Migu 脚架项目设计文档
+title: Migu 脚手架项目设计文档
 created: 2026-04-17
 type: spec
 status: draft
-version: 2.0
+version: 2.1
+last_updated: 2026-04-21
+changes: 修订 skills.json 选择器概念、新增三方一致性验证、添加 report 交接机制、添加 index.md 迁移说明、新增 kb-lint 模板检查规则
 ---
 
 # Migu 脚架项目设计文档
@@ -382,6 +384,12 @@ entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编�
 
 定义安装哪些 skills：
 
+**skills.json 是技能选择器**，而非继承器：
+
+- 每个 rules 的 skills.json 是独立配置，选择该类型知识库需要的 skills
+- minimal 的 skills.json 是默认配置模板（6 个基础 skills）
+- 其他 rules 的 skills.json 根据需求选择 skills（数量可能不同）
+
 **minimal 的 skills.json：**
 
 ```json
@@ -460,6 +468,8 @@ entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编�
 }
 ```
 
+注：history 选择 kb-compile 的 history 版本，其他 skills 选择 minimal 版本。
+
 ### 4.3 继承规则
 
 非 minimal 规则继承 minimal 的配置，只覆盖差异部分：
@@ -467,7 +477,7 @@ entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编�
 | 文件/目录 | 继承行为 |
 |----------|---------|
 | AGENTS.md | 存在则覆盖，不存在则继承 minimal |
-| skills.json | 存在则完整覆盖（需包含全部 skills 配置），不存在则继承 minimal |
+| skills.json | **独立配置，不继承**（见 §4.2 说明） |
 | structure.json | 存在则覆盖，不存在则继承 minimal |
 | templates/*.md | 同名文件覆盖，不存在则继承 minimal/templates/ 对应文件 |
 
@@ -475,7 +485,7 @@ entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编�
 
 history 规则只需要定制 kb-compile 的实体提取模板，因此：
 - AGENTS.md：覆盖（schema 不同）
-- skills.json：完整覆盖（kb-compile source 不同）
+- skills.json：独立配置（选择需要的 skills，见 §4.2）
 - structure.json：不提供，继承 minimal（目录结构相同）
 - templates/index.md：覆盖（索引格式可能不同）
 - templates/log.md：不提供，继承 minimal
@@ -497,22 +507,44 @@ migu init <target-dir> [--rules <rules-name>]
 
 **执行流程：**
 1. 检查 `<target-dir>` 是否存在
-2. 合并配置（继承 minimal + 覆盖指定 rules）：
+2. **验证三方一致性**：
+   - 检查 structure.json wiki 目录
+   - 检查 rules 对应的 kb-compile SKILL.md 实体类型→目录映射
+   - 检查 templates/index.md sections 定义
+   - 不一致则报错并拒绝创建，输出具体不一致项
+3. 合并配置（继承 minimal + 覆盖指定 rules）：
    - structure.json：minimal 为基础，rules 覆盖
    - AGENTS.md：minimal 为基础，rules 覆盖
-   - skills.json：minimal 为基础，rules 完整覆盖
-3. 创建目录结构（根据合并后的 structure.json）
-4. 创建 `raw/.extracted/` 目录结构
-5. 安装 skills（根据合并后的 skills.json）：
+   - skills.json：读取 rules 的 skills.json（独立配置）
+4. 创建目录结构（根据合并后的 structure.json）
+5. 创建 `raw/.extracted/` 目录结构
+6. 安装 skills（根据 skills.json）：
    - 复制 `skills/<source>/<name>` → `<target-dir>/.agents/skills/<name>`
    - 创建 skills-lock.json
-6. 复制模板文件（继承 minimal/templates + 覆盖 rules/templates）：
+7. 复制模板文件（继承 minimal/templates + 覆盖 rules/templates）：
    - log.md：直接复制模板
    - raw-registry.md：直接复制模板
    - index.md：动态生成
      - 复制 templates/index.md 头部注释
      - 根据 structure.json wiki 目录动态生成 sections
      - 每个 section 添加 entry 注释
+
+**三方一致性验证细节：**
+
+| 检查项 | 来源 | 验证规则 |
+|--------|------|----------|
+| wiki 目录列表 | structure.json `directories.wiki` 子目录 | 基准 |
+| 实体映射目录 | kb-compile SKILL.md 实体类型→目录映射 | 必须是 structure.json wiki 子目录的子集或全集 |
+| sections 列表 | templates/index.md 或动态生成 | 必须与 structure.json wiki 子目录一致 |
+
+**验证失败输出示例：**
+```
+✗ 三方一致性验证失败：
+  - structure.json 定义 wiki/timeline/，但 kb-compile SKILL.md 未定义 timeline 映射
+  - templates/index.md 包含 ## timeline section，但 structure.json 未定义 wiki/timeline/
+
+请修正 rules 配置后再执行 migu init。
+```
 
 **输出示例：**
 ```
@@ -641,6 +673,37 @@ sections 对应 structure.json wiki 目录结构
 **隐含约束：**
 
 index.md sections 与 structure.json wiki 目录结构一致。kb-status 解析 index.md 获取 wiki 统计信息，无需扫描 wiki 目录。
+
+**structure.json 变化时的迁移：**
+
+当 structure.json wiki 目录变化（新增或删除目录）时，index.md sections 可能需要迁移。
+
+| 迁移时机 | 说明 |
+|----------|------|
+| 不主动触发 | migu 和 skills 不主动检测 structure.json 变化，用户自行判断是否需要迁移 |
+| 用户手动处理 | 用户可手动编辑 index.md 添加新 section，或重新 migu init（清空 entries） |
+
+**迁移策略（若用户决定迁移）：**
+
+采用 **增量添加** 策略：
+- 新增 structure.json wiki 目录 → 在 index.md 添加对应 section
+- 删除 structure.json wiki 目录 → index.md 旧 section 和 entries 保留不动
+- 已有 sections 和 entries → 保持不变
+
+删除目录场景的处理：
+- kb-lint 可检测 orphan entries（entries 指向的 wiki 文件目录不存在）
+- 输出告警，建议用户手动处理
+
+**迁移示例：**
+
+structure.json 新增 `wiki/timeline/` 目录后，用户手动在 index.md 添加：
+
+```markdown
+## timeline
+<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
+```
+
+后续 kb-compile 生成的 timeline 相关文档会在此 section 添加 entries。
 
 ### 6.2 log.md
 
@@ -915,7 +978,14 @@ SKILL.md 包含意图分支逻辑：
 
 ### 9.1 kb-query 流程
 
-kb-query 输出 report（符合模板格式），供 kb-archive 执行。
+kb-query 输出 report，供 kb-archive 执行。
+
+**report 交接机制：**
+
+report 通过 **agent 上下文传递**，不写入文件：
+- kb-query 执行完成后，report 存留在 agent session 上下文中
+- kb-archive 通过同一 agent session 加载 report 内容
+- 用户在同一次对话中依次触发 kb-query 和 kb-archive，无需手动传递
 
 #### 流程步骤
 
@@ -983,8 +1053,25 @@ kb-query 输出 report（符合模板格式），供 kb-archive 执行。
 
 | 限制类型 | 规则 | 超出处理 |
 |---------|------|---------|
-| 数量限制 | 最多回溯 5 个 raw 文件 | 提示用户选择优先回溯哪些 |
+| 数量限制 | 最多回溯 5 个 **唯一** raw 文件 | 提示用户选择优先回溯哪些 |
 | 大小限制 | 单文件不超过 50KB | 提示用户确认是否处理 |
+
+**唯一文件计算方式：**
+
+多个 entities 可能引用同一 raw 文件（如《史记·高祖本纪》包含刘邦、萧何、曹参等）。
+
+计算规则：
+- 按 **唯一 raw 文件路径** 计数，同一文件只计入 1 次
+- 通过 entities 的 `source` 字段收集所有引用的 raw 文件
+- 去重后计算总数，不超过 5 个
+
+示例：
+- 刘邦 → source: [[raw/史记/本纪/高祖本纪.md]]
+- 萧何 → source: [[raw/史记/本纪/高祖本纪.md]]
+- 曹参 → source: [[raw/史记/本纪/高祖本纪.md]]
+- 张良 → source: [[raw/史记/列传/张良传.md]]
+
+去重后：2 个唯一文件（高祖本纪.md、张良传.md），符合 5 文件限制。
 
 #### 边界情况处理
 
@@ -1025,11 +1112,22 @@ report 符合 report-template.md 结构：
 
 kb-archive 接收 kb-query 的 report，执行回写建议。
 
+**report 接收机制：**
+
+kb-archive 通过 **agent 上下文** 接收 report：
+- kb-archive 在同一 agent session 中执行，读取上下文中的 report 内容
+- 用户在同一次对话中依次触发 kb-query 和 kb-archive
+- 若 report 不在上下文中（如单独调用 kb-archive），kb-archive 输出提示："未找到 report，请先执行 kb-query"
+
 #### 流程步骤
 
-1. **接收 report**：kb-query 生成的 report 作为上下文
+1. **检查 report 是否存在**：
+   - report 在 agent 上下文中：继续执行
+   - report 不存在：输出提示并终止
 
-2. **解析回写建议**：提取 report 中的回写建议列表
+2. **接收 report**：读取 agent 上下文中的 report 内容
+
+3. **解析回写建议**：提取 report 中的回写建议列表
 
 3. **生成回写摘要**：
    ```
@@ -1165,8 +1263,39 @@ Knowledge Base Dashboard: my-kb/
 1. **扫描 wiki/ 目录**：获取所有 wiki 文档
 2. **语法检查**：调用 syntax.py 检查 markdown 格式、链接有效性
 3. **语义检查**：调用 semantic.py 检查内容一致性、引用完整性
-4. **报告问题**：汇总检查结果，呈现给用户
-5. **可选修复**：调用 fix.py 自动修复可修复的问题
+4. **模板一致性检查**：调用 semantic.py 检查 wiki 文档是否符合 kb-compile templates 定义的结构
+5. **报告问题**：汇总检查结果，呈现给用户
+6. **可选修复**：调用 fix.py 自动修复可修复的问题
+
+**模板一致性检查规则：**
+
+| 检查项 | 规则 | 问题级别 |
+|--------|------|----------|
+| section 结构 | wiki 文档的 sections 是否符合 templates 定义的 section 列表 | 告警 |
+| 必填字段 | templates 定义为必填的字段是否存在 | 告警 |
+| wikilink 格式 | 引用是否使用正确的 wikilink 格式 `[[文档名]]` | 告警 |
+| source 字段 | 是否包含 `source: [[raw/...]]` 字段 | 错误 |
+
+**模板检查输出示例：**
+```
+模板一致性检查结果：
+  - [[刘邦]] ✓ 符合 person-template.md 结构
+  - [[萧何]] ⚠ 缺少必填 section "生平"，建议重新 compile
+  - [[沛县]] ⚠ section "地理位置" 不符合 place-template.md 定义
+  
+建议：对不符合模板的文档执行 kb-compile 重新编译。
+```
+
+**orphan entries 检查：**
+
+kb-lint 可检测 orphan entries（index.md entries 指向的 wiki 文件所在目录不存在于 structure.json）：
+
+```
+orphan entries 检查结果：
+  - [[某文档]] 所在目录 wiki/deprecated/ 不在 structure.json 定义中
+  
+建议：手动处理 orphan entries（移动到正确的 section 或删除）。
+```
 
 ---
 
