@@ -25,13 +25,72 @@ related_spec: docs/superpowers/specs/2026-04-17-migu-scaffold-design.md
 | Lint | kb-lint | Wiki 检查（语法、语义、模板一致性） |
 | - | kb-status | 仪表盘展示（migu 特有） |
 
+## 附录：SKILL.md 编写模板
+
+### 基本结构
+
+```markdown
+---
+title: <skill-name>
+version: 1.0
+created: YYYY-MM-DD
+---
+
+# <skill-name>
+
+## 职责
+
+<一句话描述该 skill 的职责>
+
+## 执行流程
+
+<按步骤描述执行流程，包含意图识别、条件分支、边界处理>
+
+## scripts 使用说明
+
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| <script-name> | <用途描述> | <调用时机> | 必须/可选 |
+
+依赖类型说明：
+- 必须：流程步骤明确依赖该 script
+- 可选：agent 可判断是否需要调用，可用其他方式替代
+
+## references 说明
+
+| reference | 用途 |
+|-----------|------|
+| <reference-name> | <用途描述> |
+
+## 输入输出
+
+**输入**：
+- <输入项>
+
+**输出**：
+- <输出项>
+
+## 边界情况
+
+| 场景 | 处理方式 |
+|------|----------|
+| <场景描述> | <处理方式> |
+```
+
+### 注意事项
+
+1. **完全 LLM 的 skill**（如 kb-compile）：流程步骤直接写 LLM 操作，不写具体算法
+2. **含 scripts 的 skill**：流程步骤写"调用 xxx.py"，scripts 使用说明表格详细描述
+3. **有会话依赖的 skill**（如 kb-archive）：明确声明会话依赖，说明同一 agent session 的要求
+4. **有条件分支的 skill**：使用意图识别表格，明确各分支的触发条件和执行方式
+
 ---
 
 ## 1. kb-ingest 流程设计
 
 **职责**：扫描 raw/、预处理文件、输出到 raw/.extracted/。
 
-**适用范围**：通用（所有知识库类型使用 minimal 版本）。
+**适用范围**：见 scaffold-design §4.2 按类型分组。
 
 ### 1.1 流程步骤
 
@@ -66,13 +125,22 @@ related_spec: docs/superpowers/specs/2026-04-17-migu-scaffold-design.md
 | 编码修复 | raw/.extracted/... | 文件名或内容含特殊编码，规范化后输出 |
 | 图片下载 | raw/.extracted/... | 含 http 图片，下载到本地，更新链接后输出 |
 
+### 1.4 scripts 使用说明
+
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| scan_raw.py | 扫描 raw/ 目录，检测新文件 | 步骤 1：检测 raw/ 目录中的新文件 | 必须 |
+| validate_batch.py | 验证批次处理逻辑 | 步骤 2：对比 raw-registry.md 时验证 | 可选 |
+| normalize_markdown.py | 规范化 markdown 文件 | 步骤 3：处理需预处理的 markdown | 必须 |
+| convert_pdf.py | 转换 PDF 为 markdown | 步骤 3：处理 PDF 文件 | 必须 |
+
 ---
 
 ## 2. kb-compile 流程设计
 
 **职责**：读取文件、提取实体、生成 wiki 页面（完全 LLM）。
 
-**适用范围**：minimal 和 history 有不同版本。
+**适用范围**：见 scaffold-design §4.2 按类型分组。
 
 ### 2.1 minimal 版本流程
 
@@ -128,6 +196,13 @@ SKILL.md 包含意图分支逻辑：
 | place-template.md | 地点实体页面格式 |
 | event-template.md | 事件实体页面格式 |
 
+### 2.1.5 scripts 使用说明
+
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| read_file.py | 根据产物路径读取文件 | 步骤 2：读取待编译文件内容 | 必须 |
+| update_registry.py | 更新 raw-registry.md | 步骤 6：更新编译状态和日期 | 必须 |
+
 ### 2.2 history 版本流程（继承 minimal + 差异）
 
 history 版本继承 minimal 流程，差异点：
@@ -150,13 +225,15 @@ history 特有文件，定义历史文档的实体识别模式：
 - 历史事件识别规则（年号、纪年转换）
 - 机构识别规则（官职、机构名称）
 
+注：history 版本 scripts 与 minimal 版本相同，scripts 使用说明见 §2.1.5。
+
 ---
 
 ## 3. kb-lint 流程设计
 
 **职责**：Wiki 检查（语法、语义、修复）。
 
-**适用范围**：通用（所有知识库类型使用 minimal 版本）。
+**适用范围**：见 scaffold-design §4.2 按类型分组。
 
 ### 3.1 流程步骤
 
@@ -185,13 +262,22 @@ kb-lint 可检测 orphan entries（index.md entries 指向的 wiki 文件所在�
 - 检查每个 entry 指向的 wiki 文件目录是否存在于 structure.json wiki 子目录中
 - 输出告警，建议用户手动处理
 
+### 3.4 scripts 使用说明
+
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| lint.py | 协调检查流程 | 步骤 1：扫描 wiki/ 后启动 | 必须 |
+| syntax.py | 语法检查 | 步骤 2：检查 markdown 格式、链接 | 必须 |
+| semantic.py | 语义检查 | 步骤 3-4：检查内容一致性、模板一致性 | 必须 |
+| fix.py | 自动修复 | 步骤 6：可选修复可修复问题 | 可选 |
+
 ---
 
 ## 4. kb-query 流程设计
 
 **职责**：Wiki 查询 + 回溯模式 + 生成 report。
 
-**适用范围**：通用（所有知识库类型使用 minimal 版本）。
+**适用范围**：见 scaffold-design §4.2 按类型分组。
 
 ### 4.1 流程步骤
 
@@ -300,13 +386,19 @@ report 符合 report-template.md 结构：
 | wiki 无相关实体 | "未找到相关实体，建议检查 raw 是否已 compile" |
 | 回溯无新发现 | "raw 回溯完成，无新发现信息" |
 
+### 4.6 scripts 使用说明
+
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| search_wiki.py | 搜索 wiki 目录 | 步骤 4：根据意图搜索相关文档 | 可选（可替代为 grep） |
+
 ---
 
 ## 5. kb-archive 流程设计
 
 **职责**：接收 report + 回写摘要 + 有机融入。
 
-**适用范围**：通用（所有知识库类型使用 minimal 版本）。
+**适用范围**：见 scaffold-design §4.2 按类型分组。
 
 **会话依赖**：kb-archive 必须在 kb-query 执行后的同一 agent session 中执行。
 
@@ -387,13 +479,21 @@ synthesis 报告符合 synthesis-template.md 结构：
 
 注：synthesis 报告不含"回写建议"section（回写建议已由 kb-archive 执行）。
 
+### 5.5 scripts 使用说明
+
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| read_report.py | 读取 report 内容 | 步骤 2：从 agent 上下文读取 report | 必须 |
+| create_synthesis.py | 创建 synthesis 文件 | 步骤 6：创建 synthesis 报告 | 必须 |
+| update_entity.py | 有机融入 wiki 文档 | 步骤 6：执行回写建议 | 必须 |
+
 ---
 
 ## 6. kb-status 流程设计
 
 **职责**：展示知识库仪表盘（解析 index.md + raw-registry.md）。
 
-**适用范围**：通用（所有知识库类型使用 minimal 版本）。
+**适用范围**：见 scaffold-design §4.2 按类型分组。
 
 ### 6.1 流程步骤
 
@@ -449,59 +549,10 @@ Knowledge Base Dashboard: my-kb/
 └─────────────────────────────────────────────────┘
 ```
 
----
+### 6.4 scripts 使用说明
 
-## 附录：SKILL.md 编写模板
-
-### 基本结构
-
-```markdown
----
-title: <skill-name>
-version: 1.0
-created: YYYY-MM-DD
----
-
-# <skill-name>
-
-## 职责
-
-<一句话描述该 skill 的职责>
-
-## 执行流程
-
-<按步骤描述执行流程，包含意图识别、条件分支、边界处理>
-
-## scripts 使用说明
-
-| script | 用途 | 调用时机 |
-|--------|------|----------|
-| <script-name> | <用途描述> | <调用时机> |
-
-## references 说明
-
-| reference | 用途 |
-|-----------|------|
-| <reference-name> | <用途描述> |
-
-## 输入输出
-
-**输入**：
-- <输入项>
-
-**输出**：
-- <输出项>
-
-## 边界情况
-
-| 场景 | 处理方式 |
-|------|----------|
-| <场景描述> | <处理方式> |
-```
-
-### 注意事项
-
-1. **完全 LLM 的 skill**（如 kb-compile）：流程步骤直接写 LLM 操作，不写具体算法
-2. **含 scripts 的 skill**：流程步骤写"调用 xxx.py"，scripts 使用说明表格详细描述
-3. **有会话依赖的 skill**（如 kb-archive）：明确声明会话依赖，说明同一 agent session 的要求
-4. **有条件分支的 skill**：使用意图识别表格，明确各分支的触发条件和执行方式
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| read_registry.py | 解析 raw-registry.md | 步骤 1：统计 raw 文件状态 | 必须 |
+| read_index.py | 解析 index.md | 步骤 2：统计 wiki 文档状态 | 必须 |
+| format_dashboard.py | 格式化仪表盘输出 | 步骤 5：生成仪表盘 | 必须
