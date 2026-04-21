@@ -776,14 +776,16 @@ entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编�
 
 每个 skill 完全自包含，职责单一：
 
-| skill | 职责 | scripts |
-|-------|------|---------|
-| kb-ingest | 扫描 raw/、预处理文件、输出到 raw/.extracted/ | scan_raw.py, validate_batch.py, normalize_markdown.py, convert_pdf.py |
-| kb-compile | 读取文件、提取实体、生成 wiki 页面（完全 LLM） | read_file.py, update_registry.py |
-| kb-lint | Wiki 检查（语法、语义、修复） | lint.py, syntax.py, semantic.py, fix.py |
-| kb-query | Wiki 查询 + 回溯模式 + 生成 report | search_wiki.py |
-| kb-archive | 接收 report + 回写摘要 + 有机融入 | read_report.py, create_synthesis.py, update_entity.py |
-| kb-status | 展示知识库仪表盘（解析 index.md + raw-registry.md） | read_registry.py, read_index.py, format_dashboard.py |
+| skill | 职责 |
+|-------|------|
+| kb-ingest | 扫描 raw/、预处理文件、输出到 raw/.extracted/ |
+| kb-compile | 读取文件、提取实体、生成 wiki 页面（完全 LLM） |
+| kb-lint | Wiki 检查（语法、语义、修复） |
+| kb-query | Wiki 查询 + 回溯模式 + 生成 report |
+| kb-archive | 接收 report + 回写摘要 + 有机融入 |
+| kb-status | 展示知识库仪表盘（解析 index.md + raw-registry.md） |
+
+各 skill 的 scripts 使用说明详见 implementation-guide §1-6。
 
 **技能执行模型**：
 
@@ -832,13 +834,7 @@ AGENTS.md 是知识库 schema，对应 Karpathy LLM-WIKI 的 Schema 层：
 - 引用格式（wikilink 规范）
 - 操作规则（与 Karpathy Operations 对应）
 
-与 Karpathy LLM-WIKI Operations 对应：
-
-| Karpathy Operation | migu Skills |
-|--------------------|-------------|
-| Ingest | kb-ingest |
-| Query | kb-query |
-| Lint | kb-lint |
+与 Karpathy LLM-WIKI Operations 的对应关系详见 implementation-guide 开头。
 
 #### AGENTS.md 与 skills.json 协作
 
