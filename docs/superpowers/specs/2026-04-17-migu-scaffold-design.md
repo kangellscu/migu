@@ -3,9 +3,9 @@ title: Migu 脚手架项目设计文档
 created: 2026-04-17
 type: spec
 status: draft
-version: 2.2
+version: 2.3
 last_updated: 2026-04-21
-changes: 修订 skills.json 选择器概念、新增三方一致性验证、添加 report 交接机制、添加 index.md 迁移说明、新增 kb-lint 模板检查规则、新增 migu init 幂等性说明、新增 migu rules 命令（配置更新检测）、添加 frontmatter 版本追踪
+changes: 修订 skills 依赖层次声明、skills.json 强制要求、kb-lint orphan entries 职责边界、rules 文件 frontmatter 来源统一、三方验证 SKILL.md 定位逻辑、删除 install-all/reinstall-all 命令、index.md 动态生成保留 frontmatter
 ---
 
 # Migu 脚手架项目设计文档
@@ -234,7 +234,14 @@ migu/                          # 项目根目录（独立仓库）
 | kb-archive | 接收 report + 回写摘要 + 有机融入 | read_report.py, create_synthesis.py, update_entity.py |
 | kb-status | 展示知识库仪表盘（解析 index.md + raw-registry.md） | read_registry.py, read_index.py, format_dashboard.py |
 
-**无依赖关系**：各 skill 独立运作。kb-ingest 输出是 kb-compile 输入，但无声明依赖，用户手动编排顺序。
+**依赖层次：**
+
+| 层次 | 类型 | 说明 | 示例 |
+|------|------|------|------|
+| 数据依赖 | 输入输出依赖 | 用户手动编排执行顺序 | kb-ingest 输出 → kb-compile 输入 |
+| 会话依赖 | agent 上下文依赖 | 必须同一 agent session | kb-query report → kb-archive |
+
+**独立执行：** 各 skill 可独立触发执行，但协作型 skills（如 kb-query + kb-archive）存在会话依赖，需在同一 agent session 中执行。
 
 ### 3.4 minimal 作为基础
 
@@ -283,7 +290,14 @@ rules/
 
 **版本追踪（frontmatter）：**
 
-migu init 复制 AGENTS.md 到知识库根目录时，添加 frontmatter 用于版本追踪：
+migu repo 中 rules 文件预置 frontmatter，复制到知识库时保留：
+
+| 文件 | migu repo 状态 | 复制到知识库行为 |
+|------|----------------|------------------|
+| AGENTS.md | 预置 frontmatter | 保留原有 frontmatter |
+| templates/*.md | 预置 frontmatter | 保留原有 frontmatter |
+
+**frontmatter 示例：**
 
 ```yaml
 ---
@@ -300,7 +314,7 @@ frontmatter 字段说明：
 |------|------|------|
 | version | string | 配置文件版本号 |
 
-`migu rules list` 通过对比 frontmatter.version 与 migu 捆绑版本，检测是否需要更新。
+`migu rules list` 通过对比知识库文件 frontmatter.version 与 migu repo 中对应文件 version，检测是否需要更新。
 
 #### structure.json
 
@@ -340,20 +354,7 @@ structure.json wiki 目录结构需与 kb-compile SKILL.md 实体类型→目录
 
 存放初始文件的内容模板，migu init 复制到知识库根目录。
 
-**版本追踪（frontmatter）：**
-
-templates/*.md 文件复制到知识库时，添加 frontmatter 用于版本追踪：
-
-```yaml
----
-version: 1.0
----
-# Wiki Index
-
-（内容...）
-```
-
-`migu rules list` 通过对比 frontmatter.version 与 migu 捆绑版本，检测是否需要更新。
+所有 templates/*.md 在 migu repo 中预置 frontmatter，复制时保留原有 frontmatter。
 
 **templates/index.md：**
 
@@ -434,6 +435,17 @@ entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编�
 - 每个 rules 的 skills.json 是独立配置，选择该类型知识库需要的 skills
 - minimal 的 skills.json 是默认配置模板（6 个基础 skills）
 - 其他 rules 的 skills.json 根据需求选择 skills（数量可能不同）
+
+**强制要求：**
+
+每个 rules 必须提供 skills.json。migu init 执行时若 rules 目录缺少 skills.json，报错退出：
+
+```
+✗ rules/<name> 缺少 skills.json
+
+skills.json 是必需配置文件，定义知识库需要安装的 skills。
+请参考 rules/minimal/skills.json 创建配置。
+```
 
 **minimal 的 skills.json：**
 
@@ -580,10 +592,11 @@ migu init <target-dir> [--rules <rules-name>]
    - 复制 `skills/<source>/<name>` → `<target-dir>/.agents/skills/<name>`
    - 创建 skills-lock.json
 7. 复制模板文件（继承 minimal/templates + 覆盖 rules/templates）：
-   - log.md：直接复制模板
-   - raw-registry.md：直接复制模板
-   - index.md：动态生成
-     - 复制 templates/index.md 头部注释
+   - AGENTS.md：保留原有 frontmatter，复制到知识库根目录
+   - log.md：保留原有 frontmatter，直接复制模板
+   - raw-registry.md：保留原有 frontmatter，直接复制模板
+   - index.md：保留 frontmatter + 动态生成 sections
+     - 保留 templates/index.md frontmatter
      - 根据 structure.json wiki 目录动态生成 sections
      - 每个 section 添加 entry 注释
 
@@ -594,6 +607,17 @@ migu init <target-dir> [--rules <rules-name>]
 | wiki 目录列表 | structure.json `directories.wiki` 子目录 | 基准 |
 | 实体映射目录 | kb-compile SKILL.md 实体类型→目录映射 | 必须是 structure.json wiki 子目录的子集或全集 |
 | sections 列表 | templates/index.md 或动态生成 | 必须与 structure.json wiki 子目录一致 |
+
+**kb-compile SKILL.md 定位：**
+
+验证使用 skills.json 中 kb-compile 的 `source` 字段指定的 SKILL.md：
+
+1. 读取 rules/<name>/skills.json
+2. 定位 kb-compile：skills/<skills.json[kb-compile].source>/kb-compile/SKILL.md
+
+示例：
+- minimal rules → skills.json[kb-compile].source = "minimal" → skills/minimal/kb-compile/SKILL.md
+- history rules → skills.json[kb-compile].source = "history" → skills/history/kb-compile/SKILL.md
 
 **验证失败输出示例：**
 ```
@@ -629,8 +653,6 @@ migu init 是幂等操作：
 migu skill install <skill-name> <target-dir>
 migu skill uninstall <skill-name> <target-dir>
 migu skill reinstall <skill-name> <target-dir>
-migu skill install-all <target-dir>
-migu skill reinstall-all <target-dir>
 migu skill list <target-dir>
 ```
 
@@ -1418,14 +1440,7 @@ Knowledge Base Dashboard: my-kb/
 
 **orphan entries 检查：**
 
-kb-lint 可检测 orphan entries（index.md entries 指向的 wiki 文件所在目录不存在于 structure.json）：
-
-```
-orphan entries 检查结果：
-  - [[某文档]] 所在目录 wiki/deprecated/ 不在 structure.json 定义中
-  
-建议：手动处理 orphan entries（移动到正确的 section 或删除）。
-```
+kb-lint 可检测 orphan entries（index.md entries 指向的 wiki 文件所在目录不在 structure.json 定义中）。具体检测机制由 kb-lint SKILL.md 定义。
 
 ---
 
@@ -1474,7 +1489,7 @@ migu 是 Git 管理的独立仓库：
 理由：
 - skill 自包含，复制即安装
 - 无需额外的 scripts.config 配置
-- 各 skill 独立运作，无依赖关系
+- 各 skill 可独立触发执行，协作型 skills 存在会话依赖（见 §3.3）
 
 ### 15.3 kb-ingest 和 kb-compile 分离
 
