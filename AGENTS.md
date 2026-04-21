@@ -38,11 +38,11 @@ uv run migu init my-kb       # 运行 CLI
 | 阶段 | 内容 | 产出验证 |
 |------|------|---------|
 | **阶段 1** | CLI init + rules minimal | `migu init my-kb` 创建知识库骨架 |
-| **阶段 2** | Skills minimal（6 个） | kb-ingest/compile/lint/query/archive/status 可运行 |
-| **阶段 3** | CLI skill 命令 | `migu skill list/install/uninstall/reinstall` |
+| **阶段 2** | CLI skill 命令 | `migu skill list/install/uninstall/reinstall` 可安装 skills |
+| **阶段 3** | Skills minimal（6 个） | kb-ingest/compile/lint/query/archive/status 可运行 |
 | **阶段 4** | history 定制 | `migu init my-kb --rules history` |
 
-阶段 1 可独立完成并验证。
+阶段 1 可独立完成并验证。阶段 2 完成后，可使用 `migu skill install` 测试 skills 效果。
 
 ## Skills 结构
 
