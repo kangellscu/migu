@@ -5,7 +5,7 @@ type: spec
 status: draft
 version: 3.0
 last_updated: 2026-04-21
-changes: 重组 spec 结构：按 domain 分离（脚手架/知识库）、移出 skills 流程细节至 implementation guide、新增 §5 契约边界、§4.3 AGENTS.md 开发指南、§3.4 实现约束、删除 §14 扩展设计、§16 分散整合
+changes: 重组 spec 结构：按 domain 分离（脚手架/知识库）、移出 skills 流程细节至 implementation guide、新增 §5 契约边界、§4.3 AGENTS.md 开发指南、§3.4 实现约束、删除 §14 扩展设计、§16 分散整合；优化 spec：消除冗余（Karpathy 表/skills 表）、补全遗漏（output/目录/解析规范/扩展指南/错误处理）、修复不一致（source 字段格式/scripts 使用方式）
 ---
 
 # Migu 脚手架项目设计文档
@@ -637,6 +637,21 @@ raw 文件注册表，kb-ingest 和 kb-compile 共同维护。
 | 部分编译 | 部分实体已提取，未完成 |
 | 已引用 | image 文件被 wiki 页面引用 |
 
+#### output/ 目录
+
+存放根据 wiki 内容生成的衍生文档（slide、excel 等）。
+
+管理方式：
+- migu init 根据 structure.json 创建 output/ 目录
+- 目录内容由用户自行管理（不定义专门 skill）
+- 子目录结构由用户自定义（用户可自定义）
+- migu 不追踪该目录内容状态（与 raw-registry.md 无关）
+
+用途示例（用户可自定义）：
+- slide/：导出的演示文稿
+- excel/：导出的数据表格
+- export/：其他格式导出
+
 #### wiki 文档格式
 
 wiki 文档由 kb-compile 生成，存放在 `wiki/` 目录下。
@@ -660,7 +675,7 @@ wiki 文档由 kb-compile 生成，存放在 `wiki/` 目录下。
 - [[楚汉之争]]
 
 ## 来源
-source: [[raw/史记/本纪/高祖本纪.md]]
+- source: [[raw/史记/本纪/高祖本纪.md]]
 ```
 
 source 字段规范：
@@ -668,9 +683,41 @@ source 字段规范：
 | 规则 | 说明 |
 |------|------|
 | 必须包含 | 每个 wiki 文档必须有 source 字段 |
+| 固定位置 | 放在 `## 来源` section 下，作为列表项 |
+| 格式固定 | `- source: [[raw/<path>]]` |
 | 指向 raw | 指向原始 raw 文件（原始出处），而非 .extracted/ 产物 |
-| wikilink 格式 | 便于 Obsidian 导航 |
 | 回溯依赖 | kb-query 回溯模式通过此字段定位 raw 文件 |
+
+#### 解析规范
+
+scripts 解析 raw-registry.md 时需遵循：
+
+| 解析规则 | 说明 |
+|----------|------|
+| 表格分隔符 | 第二行为 `|------|------|...` 格式 |
+| wikilink 解析 | `[[path\|alias]]` 格式，提取 path 部分 |
+| 状态字段 | 预处理状态、编译状态为枚举值（见 scaffold-design §4.1 raw-registry.md 状态定义表） |
+| 日期格式 | YYYY-MM-DD 格式 |
+| 空字段 | `-` 表示无值 |
+
+#### 解析异常处理
+
+kb-ingest scan_raw.py 与 kb-status read_registry.py 遇到格式错误时：
+
+处理方式：
+- 报错退出，不跳过异常条目
+- 提供修复建议：指出错误行号 + 期望格式
+- 提示重执行：kb-ingest 可恢复 raw-registry.md 格式
+
+示例输出：
+
+```
+raw-registry.md 格式错误：
+- 第 N 行：wikilink 格式不正确，期望 [[path\|alias]]
+- 第 M 行：预处理状态值无效，期望：未处理/已处理/无需处理
+
+修复方式：重新执行 kb-ingest 可恢复格式，或手动修复后重新执行。
+```
 
 #### templates/
 
@@ -805,9 +852,12 @@ AGENTS.md 定义知识库结构，skills.json 选择用于操作该结构的 ski
 
 - raw/ 目录不可变（用户管理）
 - raw/.extracted/ 目录由 kb-ingest 维护（不手动修改）
+- output/ 目录由用户管理（自行创建衍生文档）
 - AGENTS.md 可修改（用户定制）
 - skills-lock.json 自动维护（不手动修改）
 - raw-registry.md 自动维护（kb-ingest/kb-compile 更新）
+
+违反约定可能导致 migu 功能异常，需重新执行对应 skill 恢复。
 
 ---
 
@@ -969,6 +1019,62 @@ kb-compile 不读取 structure.json：
 - 目录由 migu init 创建，已存在
 - kb-compile 通过 SKILL.md 映射决定实体放入哪个目录
 - rules 设计者需确保 SKILL.md 映射目标目录与 structure.json 一致
+
+---
+
+## 7. 扩展指南
+
+### 创建新 rules 类型
+
+最小文件集：
+- AGENTS.md（必须）
+- skills.json（必须）
+- structure.json（可选，继承 minimal）
+- templates/*.md（可选，继承 minimal）
+
+命名规范：
+- rules 名称：小写字母，如 legal、medical
+- 目录位置：rules/<rules-name>/
+
+继承规则：
+- skills.json：独立配置，不继承
+- 其他文件：存在则覆盖，不存在则继承 minimal
+
+### 三方一致性验证
+
+创建新 rules 时需确保三者一致：
+- structure.json wiki 目录与 kb-compile SKILL.md 实体类型→目录映射一致
+- index.md sections 与 structure.json wiki 目录一致
+
+验证机制详见 §5.1，migu init 执行前自动验证，失败则拒绝创建。
+
+### 示例：创建 legal rules
+
+1. 创建目录：rules/legal/
+2. 创建 AGENTS.md：定义法律知识库 schema
+3. 创建 skills.json：选择需要的 skills
+4. （可选）创建 structure.json：定义 wiki 目录结构
+5. （可选）创建 templates/：定制初始文件模板
+6. 测试：migu init test-kb --rules legal
+
+---
+
+## 8. 错误处理策略
+
+### 错误类型
+
+| 错误类型 | 说明 | 处理原则 |
+|----------|------|---------|
+| 参数无效 | target-dir 路径不合法、rules 名称不存在 | 报错退出，提示有效选项 |
+| 目录已存在 | target-dir 已存在（非知识库） | 报错退出，提示选择其他路径 |
+| 配置缺失 | rules 目录缺少 skills.json 或 structure.json | 报错退出，提示检查 rules 配置 |
+| 版本冲突 | skills-lock.json 与 migu 捆绑版本不一致 | 显示 diff，提示用户选择 reinstall 或保留 |
+
+### 处理原则
+
+- 报错退出：严重错误，阻止继续执行
+- 提示确认：用户可选择继续或退出（如版本冲突）
+- 自动恢复：尝试修复简单问题（如创建缺失目录）
 
 ---
 
