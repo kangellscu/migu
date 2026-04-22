@@ -55,8 +55,8 @@ def create_kb(target_dir: str, rules_name: str) -> None:
     target_path.mkdir(parents=True)
     ensure_directories(target_path, structure)
     
-    # Create skill directories (placeholder for Phase 2)
-    _create_skills_placeholder(target_path, rules_name, skills)
+    # Install skills from bundle
+    _create_skills(target_path, skills, rules_name)
     
     # Create template files
     _create_template_files(target_path, rules_name)
@@ -65,28 +65,28 @@ def create_kb(target_dir: str, rules_name: str) -> None:
     print(f"Using rules: {rules_name}")
 
 
-def _create_skills_placeholder(target_path: Path, rules_name: str, skills: dict) -> None:
-    """Create skill directories and skills-lock.json (placeholder for Phase 2)."""
+def _create_skills(target_path: Path, skills: dict, rules_name: str) -> None:
+    """Install all skills from bundle to target directory."""
+    from migu.skill.installer import install_skill
+    from migu.skill.manager import save_skills_lock
+    
     skills_dir = target_path / ".agents" / "skills"
     skills_dir.mkdir(parents=True, exist_ok=True)
     
-    now = datetime.now().isoformat()
-    skills_list = []
-    for skill in skills.get("skills", []):
-        skill_entry = dict(skill)
-        skill_entry["installed_at"] = now
-        skills_list.append(skill_entry)
-    
     lock_data = {
         "rules": rules_name,
-        "installed_at": now,
+        "installed_at": datetime.now().isoformat(),
         "migu_version": "0.1.0",
-        "skills": skills_list,
+        "skills": [],
     }
     
-    (target_path / ".agents" / "skills-lock.json").write_text(
-        json.dumps(lock_data, indent=2) + "\n"
-    )
+    for skill_entry in skills.get("skills", []):
+        install_skill(
+            skill_entry["name"],
+            skill_entry["source"],
+            target_path,
+            lock_data,
+        )
 
 
 def _create_template_files(target_path: Path, rules_name: str) -> None:
