@@ -14,6 +14,10 @@ migu 是脚手架项目，用于快速搭建 LLM-WIKI 知识库。
 - **rules**：定义知识库 schema（目录结构、命名规范）
 - **skills**：操作知识库（ingest、compile、lint 等）
 
+## Superpowers 工作流
+
+本项目遵循 using-superpowers skill 定义的工作流。
+
 ## 主要目录
 
 ```
@@ -78,6 +82,6 @@ migu = "migu.cli:app"
 
 ## Spec 文档
 
-开发前阅读：
+ 开发前阅读：
 - `docs/superpowers/specs/2026-04-17-migu-scaffold-design.md`（架构层）
 - `docs/superpowers/specs/2026-04-21-skills-implementation-guide.md`（实现层）
