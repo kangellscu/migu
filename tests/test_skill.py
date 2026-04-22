@@ -1,4 +1,7 @@
+import hashlib
 import json
+import shutil
+
 import pytest
 from pathlib import Path
 from migu.skill.manager import (
@@ -7,6 +10,11 @@ from migu.skill.manager import (
     validate_target_dir,
     get_bundled_skill_path,
     get_installed_skill_path,
+)
+from migu.skill.installer import (
+    install_skill,
+    uninstall_skill,
+    check_skill_changed,
 )
 
 def test_load_skills_lock(tmp_path):
@@ -58,3 +66,145 @@ def test_save_and_reload_skills_lock(tmp_path):
     result = load_skills_lock(tmp_path)
     
     assert result == lock_data
+
+def test_install_skill(tmp_path):
+    """Verify skill copies from bundle to target."""
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+
+    skills_lock = load_skills_lock(tmp_path)
+
+    install_skill("kb-ingest", "minimal", tmp_path, skills_lock)
+
+    skill_dir = tmp_path / ".agents" / "skills" / "kb-ingest"
+    assert skill_dir.exists(), "Skill directory not created"
+    assert (skill_dir / "SKILL.md").exists(), "SKILL.md not copied"
+
+    # Check lock file updated
+    updated_lock = load_skills_lock(tmp_path)
+    skill_names = [s["name"] for s in updated_lock["skills"]]
+    assert "kb-ingest" in skill_names
+
+def test_uninstall_skill(tmp_path):
+    """Verify skill removes from target and updates lock."""
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    (tmp_path / ".agents" / "skills").mkdir(parents=True, exist_ok=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+
+    skills_lock = load_skills_lock(tmp_path)
+    install_skill("kb-ingest", "minimal", tmp_path, skills_lock)
+
+    # Then uninstall
+    uninstall_skill("kb-ingest", tmp_path, skills_lock)
+
+    skill_dir = tmp_path / ".agents" / "skills" / "kb-ingest"
+    assert not skill_dir.exists(), "Skill directory not removed"
+
+    updated_lock = load_skills_lock(tmp_path)
+    skill_names = [s["name"] for s in updated_lock["skills"]]
+    assert "kb-ingest" not in skill_names
+
+def test_check_skill_changed(tmp_path):
+    """Verify change detection against bundled version."""
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    (tmp_path / ".agents" / "skills").mkdir(parents=True, exist_ok=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [
+            {"name": "kb-ingest", "source": "minimal", "version": "1.0", "installed_at": "2026-04-22T10:00:00"}
+        ],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+
+    install_skill("kb-ingest", "minimal", tmp_path, load_skills_lock(tmp_path))
+
+    # Should not be changed right after install
+    assert not check_skill_changed("kb-ingest", tmp_path)
+
+    # Modify a file
+    skill_file = get_installed_skill_path(tmp_path, "kb-ingest") / "SKILL.md"
+    original = skill_file.read_text()
+    skill_file.write_text("# Modified\n")
+
+    # Should now be detected as changed
+    assert check_skill_changed("kb-ingest", tmp_path)
+
+    # Restore
+    skill_file.write_text(original)
+
+def test_install_skill_nonexistent_raises(tmp_path):
+    """Verify installing nonexistent skill raises ValueError."""
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+
+    skills_lock = load_skills_lock(tmp_path)
+
+    with pytest.raises(ValueError, match="not found"):
+        install_skill("nonexistent", "minimal", tmp_path, skills_lock)
+
+def test_uninstall_skill_not_installed_raises(tmp_path):
+    """Verify uninstalling non-installed skill raises ValueError."""
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+
+    skills_lock = load_skills_lock(tmp_path)
+
+    with pytest.raises(ValueError, match="not installed"):
+        uninstall_skill("kb-ingest", tmp_path, skills_lock)
+
+def test_install_skill_reinstall_overwrites(tmp_path):
+    """Verify reinstalling a skill overwrites existing copy."""
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+
+    skills_lock = load_skills_lock(tmp_path)
+
+    install_skill("kb-ingest", "minimal", tmp_path, skills_lock)
+
+    # Modify the installed file
+    skill_file = get_installed_skill_path(tmp_path, "kb-ingest") / "SKILL.md"
+    skill_file.write_text("# Modified\n")
+
+    # Reinstall should overwrite
+    install_skill("kb-ingest", "minimal", tmp_path, load_skills_lock(tmp_path))
+
+    bundled_file = get_bundled_skill_path("kb-ingest", "minimal") / "SKILL.md"
+    assert skill_file.read_text() == bundled_file.read_text()
