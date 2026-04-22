@@ -1,0 +1,13 @@
+{
+  "directories": {
+    "raw": {
+      ".extracted": {}
+    },
+    "wiki": {
+      "entities": {},
+      "concepts": {},
+      "synthesis": {}
+    },
+    "output": {}
+  }
+}
