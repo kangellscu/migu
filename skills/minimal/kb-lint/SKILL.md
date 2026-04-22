@@ -1,5 +1,32 @@
 ---
+title: kb-lint
 version: 1.0
+created: 2026-04-22
 ---
+
 # kb-lint
-TODO: Implement in Phase 3
+
+## 职责
+
+Wiki 检查（语法、语义、修复）。
+
+## 执行流程
+
+1. **扫描 wiki/ 目录**：获取所有 wiki 文档
+2. **语法检查**：调用 `syntax.py` 检查 markdown 格式、链接有效性、source 字段
+3. **语义检查**：调用 `semantic.py` 检查内容一致性、模板结构
+4. **报告问题**：汇总检查结果，呈现给用户
+5. **可选修复**：调用 `fix.py` 自动修复可修复的问题
+
+## scripts 使用说明
+
+| script | 用途 | 调用时机 | 依赖类型 |
+|--------|------|---------|---------|
+| lint.py | 协调检查流程（syntax + semantic） | 步骤 2-3：启动检查 | 必须 |
+| syntax.py | 语法检查 | 步骤 2：检查 markdown 格式、链接 | 必须 |
+| semantic.py | 语义检查 | 步骤 3：检查内容一致性 | 必须 |
+| fix.py | 自动修复 | 步骤 5：可选修复可修复问题 | 可选 |
+
+依赖类型说明：
+- 必须：流程步骤明确依赖该 script
+- 可选：agent 可判断是否需要调用
