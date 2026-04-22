@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-def test_minimalrules_exist():
+def test_minimal_rules_exist():
     """Verify minimal rules directory contains required files."""
     rules_dir = Path(__file__).parent.parent / "rules" / "minimal"
     
@@ -32,7 +32,7 @@ def test_skills_json_format():
     data = json.loads(skills_file.read_text())
     assert "skills" in data
     assert isinstance(data["skills"], list)
-    assert len(data["skills"]) >= 1
+    assert len(data["skills"]) == 6
     
     # Each skill has name, source, version
     for skill in data["skills"]:
