@@ -6,3 +6,6 @@ skills-lock.json
 .trae/
 opencode.jsonc
 knowledge-base/
+__pycache__/
+*.pyc
+.venv/
