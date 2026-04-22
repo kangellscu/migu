@@ -70,11 +70,18 @@ def _create_skills_placeholder(target_path: Path, rules_name: str, skills: dict)
     skills_dir = target_path / ".agents" / "skills"
     skills_dir.mkdir(parents=True, exist_ok=True)
     
+    now = datetime.now().isoformat()
+    skills_list = []
+    for skill in skills.get("skills", []):
+        skill_entry = dict(skill)
+        skill_entry["installed_at"] = now
+        skills_list.append(skill_entry)
+    
     lock_data = {
         "rules": rules_name,
-        "installed_at": datetime.now().isoformat(),
+        "installed_at": now,
         "migu_version": "0.1.0",
-        "skills": skills.get("skills", []),
+        "skills": skills_list,
     }
     
     (target_path / ".agents" / "skills-lock.json").write_text(
@@ -137,7 +144,10 @@ entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编�
 """
     (target_path / "raw-registry.md").write_text(registry_content)
     
-    # AGENTS.md from rules
+    # AGENTS.md from rules, fallback to minimal if not found
     rules_dir = resolve_rules(rules_name)
     agents_source = rules_dir / "AGENTS.md"
+    if not agents_source.exists():
+        minimal_dir = resolve_rules("minimal")
+        agents_source = minimal_dir / "AGENTS.md"
     (target_path / "AGENTS.md").write_text(agents_source.read_text())
