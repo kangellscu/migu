@@ -1,0 +1,22 @@
+[project]
+name = "migu"
+version = "0.1.0"
+description = "CLI scaffolder for LLM-WIKI knowledge bases"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.9",
+    "rich>=13.0",
+]
+
+[project.scripts]
+migu = "migu.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.0",
+]
