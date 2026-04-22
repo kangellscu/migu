@@ -41,5 +41,9 @@ def init(
     create_kb(target_dir, rules)
 
 
+from migu.skill.cli import skill_app
+
+app.add_typer(skill_app, name="skill")
+
 if __name__ == "__main__":
     app()

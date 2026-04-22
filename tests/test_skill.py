@@ -208,3 +208,120 @@ def test_install_skill_reinstall_overwrites(tmp_path):
 
     bundled_file = get_bundled_skill_path("kb-ingest", "minimal") / "SKILL.md"
     assert skill_file.read_text() == bundled_file.read_text()
+
+
+# CLI tests for skill commands
+
+from typer.testing import CliRunner
+
+
+def test_skill_list_command(tmp_path):
+    """Verify skill list shows installed skills."""
+    from migu.skill.cli import skill_app
+    
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [
+            {"name": "kb-ingest", "source": "minimal", "version": "1.0", "installed_at": "2026-04-22T10:00:00"}
+        ],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+    
+    runner = CliRunner()
+    result = runner.invoke(skill_app, ["list", str(tmp_path)])
+    
+    assert result.exit_code == 0
+    assert "kb-ingest" in result.output
+    assert "minimal" in result.output
+
+
+def test_skill_install_command(tmp_path):
+    """Verify skill install copies skill to target."""
+    from migu.skill.cli import skill_app
+    
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+    
+    runner = CliRunner()
+    result = runner.invoke(skill_app, ["install", "kb-ingest", str(tmp_path)])
+    
+    assert result.exit_code == 0
+    assert (tmp_path / ".agents" / "skills" / "kb-ingest").exists()
+
+
+def test_skill_list_invalid_target(tmp_path):
+    """Verify error for non-knowledge-base directory."""
+    from migu.skill.cli import skill_app
+    
+    runner = CliRunner()
+    result = runner.invoke(skill_app, ["list", str(tmp_path)])
+    
+    assert result.exit_code != 0
+    assert "skills-lock.json" in result.output
+
+
+def test_skill_uninstall_command(tmp_path):
+    """Verify skill uninstall removes skill."""
+    from migu.skill.cli import skill_app
+    from migu.skill.manager import load_skills_lock
+    from migu.skill.installer import install_skill
+    
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [
+            {"name": "kb-ingest", "source": "minimal", "version": "1.0", "installed_at": "2026-04-22T10:00:00"}
+        ],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+    (tmp_path / ".agents" / "skills").mkdir(parents=True, exist_ok=True)
+    
+    install_skill("kb-ingest", "minimal", tmp_path, load_skills_lock(tmp_path))
+    
+    runner = CliRunner()
+    result = runner.invoke(skill_app, ["uninstall", "kb-ingest", str(tmp_path)])
+    
+    assert result.exit_code == 0
+    assert not (tmp_path / ".agents" / "skills" / "kb-ingest").exists()
+
+
+def test_skill_reinstall_command(tmp_path):
+    """Verify skill reinstalls successfully."""
+    from migu.skill.cli import skill_app
+    from migu.skill.manager import load_skills_lock
+    from migu.skill.installer import install_skill
+    
+    lock_file = tmp_path / ".agents" / "skills-lock.json"
+    lock_file.parent.mkdir(parents=True)
+    lock_data = {
+        "rules": "minimal",
+        "installed_at": "2026-04-22T10:00:00",
+        "migu_version": "0.1.0",
+        "skills": [
+            {"name": "kb-ingest", "source": "minimal", "version": "1.0", "installed_at": "2026-04-22T10:00:00"}
+        ],
+    }
+    lock_file.write_text(json.dumps(lock_data))
+    (tmp_path / ".agents" / "skills").mkdir(parents=True, exist_ok=True)
+    
+    install_skill("kb-ingest", "minimal", tmp_path, load_skills_lock(tmp_path))
+    
+    runner = CliRunner()
+    result = runner.invoke(skill_app, ["reinstall", "kb-ingest", str(tmp_path)], input="y\n")
+    
+    assert result.exit_code == 0
+    assert (tmp_path / ".agents" / "skills" / "kb-ingest").exists()
