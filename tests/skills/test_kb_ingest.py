@@ -74,3 +74,63 @@ def test_validate_batch_valid(tmp_path):
     )
     assert result.returncode == 0
     assert "VALID" in result.stdout
+
+def test_normalize_cjk_radical(tmp_path):
+    """CJK radical converts to unified ideograph."""
+    input_file = tmp_path / "test.md"
+    output_file = tmp_path / "output.md"
+    
+    # Kangxi RADICAL ONE (U+2F00) + normal char
+    content = "\u2f00\u4e00\u4e28"
+    input_file.write_text(content, encoding="utf-8")
+    
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "normalize_markdown.py"),
+         str(input_file), str(output_file)],
+        capture_output=True,
+    )
+    
+    assert result.returncode == 0
+    output = output_file.read_text(encoding="utf-8")
+    assert "\u2f00" not in output
+    assert output == "\u4e00\u4e00\u4e28"
+
+def test_normalize_cjk_radical_multiple(tmp_path):
+    """Multiple CJK radicals convert correctly."""
+    input_file = tmp_path / "test.md"
+    output_file = tmp_path / "output.md"
+    
+    # Mix of CJK Radicals Supplement + Kangxi + Strokes + normal chars
+    content = "\u2e85\u2f08\u31d0\u4e00\u4eba"
+    input_file.write_text(content, encoding="utf-8")
+    
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "normalize_markdown.py"),
+         str(input_file), str(output_file)],
+        capture_output=True,
+    )
+    
+    assert result.returncode == 0
+    output = output_file.read_text(encoding="utf-8")
+    assert "\u2e85" not in output
+    assert "\u2f08" not in output
+    assert "\u31d0" not in output
+    assert output == "\u4ebb\u4eba\u4e00\u4e00\u4eba"
+
+def test_normalize_preserves_normal_chars(tmp_path):
+    """Normal Chinese characters are unchanged."""
+    input_file = tmp_path / "test.md"
+    output_file = tmp_path / "output.md"
+    
+    content = "刘邦项羽张良韩信"
+    input_file.write_text(content, encoding="utf-8")
+    
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "normalize_markdown.py"),
+         str(input_file), str(output_file)],
+        capture_output=True,
+    )
+    
+    assert result.returncode == 0
+    output = output_file.read_text(encoding="utf-8")
+    assert output == content
