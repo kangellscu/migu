@@ -13,7 +13,7 @@ def test_syntax_check_valid(tmp_path):
     (wiki / "test.md").write_text("# Test\n\nContent here.\n\n## 来源\n- source: [[raw/test.md]]")
 
     result = subprocess.run(
-        [sys.executable, str(SCRIPTS / "syntax.py"), str(wiki)],
+        [sys.executable, str(SCRIPTS / "syntax.py"), str(tmp_path)],
         capture_output=True, text=True,
     )
     assert result.returncode == 0
@@ -26,7 +26,7 @@ def test_syntax_check_missing_source(tmp_path):
     (wiki / "test.md").write_text("# Test\n\nContent.\n\n## 无关\nno source")
 
     result = subprocess.run(
-        [sys.executable, str(SCRIPTS / "syntax.py"), str(wiki)],
+        [sys.executable, str(SCRIPTS / "syntax.py"), str(tmp_path)],
         capture_output=True, text=True,
     )
     assert result.returncode != 0
