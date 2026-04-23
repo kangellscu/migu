@@ -3,6 +3,29 @@
 import sys
 from pathlib import Path
 
+def parse_table_row(line: str) -> list[str]:
+    """Parse a markdown table row, handling wiki links with | inside."""
+    cells = []
+    current = ""
+    in_wiki_link = False
+    
+    for i, char in enumerate(line):
+        if i >= 2 and line[i-2:i] == "[[":
+            in_wiki_link = True
+        if in_wiki_link and i >= 2 and line[i-2:i] == "]]":
+            in_wiki_link = False
+        
+        if char == "|" and not in_wiki_link:
+            cells.append(current.strip())
+            current = ""
+        else:
+            current += char
+    
+    if current.strip():
+        cells.append(current.strip())
+    
+    return cells
+
 def main(kb_dir: str):
     registry_file = Path(kb_dir) / "raw-registry.md"
     if not registry_file.exists():
@@ -15,7 +38,7 @@ def main(kb_dir: str):
     data_lines = []
     in_table = False
     for line in lines:
-        if line.startswith("|") and ("---" in line or "------" in line):
+        if line.startswith("|") and "-" in line and line.replace("|", "").replace("-", "").replace(" ", "") == "":
             in_table = True
             continue
         if in_table and line.strip():
@@ -23,7 +46,8 @@ def main(kb_dir: str):
     
     entries = []
     for line in data_lines:
-        cells = [c.strip() for c in line.split("|")[1:-1]]
+        cells = parse_table_row(line)
+        cells = cells[1:] if cells else []
         if len(cells) >= 7:
             entries.append({
                 "file": cells[0],

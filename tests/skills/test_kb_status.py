@@ -22,6 +22,20 @@ def test_read_registry(tmp_path):
     assert "pending_ingest:1" in result.stdout
     assert "pending_compile:1" in result.stdout
 
+def test_read_registry_alternate_separator(tmp_path):
+    """Verify read_registry.py handles alternate separator format."""
+    registry = tmp_path / "raw-registry.md"
+    registry.write_text("""| File | Type | Summary | Preprocess Status | Product Path | Compile Status | Last Processed |
+| -------- | -------- | -------- | ----------- | --------- | --------- | ------------- |
+| [[raw/test.md|test]] | markdown | Test | 已处理 | - | 未编译 | 2026-04-20 |
+""")
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "read_registry.py"), str(tmp_path)],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0
+    assert "pending_compile:1" in result.stdout
+
 def test_read_index(tmp_path):
     """Verify read_index.py counts wiki documents."""
     index = tmp_path / "index.md"
