@@ -1,23 +1,42 @@
 ---
 version: "1.0"
 ---
-# Knowledge Base Schema
+# Knowledge Base Schema (Minimal)
+
+Generic knowledge base schema per Karpathy LLM-WIKI pattern.
+Domain-specific types defined in derived rules (history, legal, etc.).
 
 ## Directory Structure
 
 - `raw/`: Raw source files (user managed, immutable)
 - `raw/.extracted/`: Processed files from kb-ingest
 - `wiki/`: LLM-generated structured documents
-  - `entities/`: Person, place, organization pages
-  - `concepts/`: Concept pages
-  - `synthesis/`: Analysis and synthesis pages
+  - `entities/`: Entity pages (persons, places, organizations, etc.)
+  - `concepts/`: Concept pages and summaries
+  - `synthesis/`: Analysis pages (synthesis, comparisons, overview)
 - `output/`: User-generated derivative documents
+
+## Wiki Page Types
+
+Per Karpathy LLM-WIKI, wiki contains:
+- **Primary pages** (kb-compile): entity pages, concept pages, summaries
+- **Analysis pages** (kb-archive): synthesis, comparisons, overview
+
+Entity/concept types are domain-specific. Minimal provides base structure.
+Analysis pages stored in wiki/synthesis/, distinguished by frontmatter type:
+```
+---
+type: synthesis | comparison | overview
+---
+```
+
+kb-archive writes analysis pages directly to wiki/synthesis/.
 
 ## Naming Conventions
 
-- Wiki pages: Title case, no file extension in wikilinks. E.g., `[[刘邦]]`
-- Raw files: Preserve original naming structure. E.g., `raw/史记/本纪/高祖本纪.md`
-- Extracted files: Mirror raw directory structure under `raw/.extracted/`
+- Wiki pages: Title case, no file extension in wikilinks. E.g., `[[EntityName]]`
+- Raw files: Preserve original naming. E.g., `raw/path/to/file.md`
+- Extracted files: Mirror raw structure under `raw/.extracted/`
 
 ## Reference Format
 
@@ -31,17 +50,17 @@ For file references:
 [[raw/<your-path>|<display-name>]]
 ```
 
-source field in wiki documents:
+Wiki pages must include source field:
 ```
 ## 来源
-- source: [[raw/<your-path>]]
+- source: [[raw/path/to/source.md]]
 ```
 
 ## Operations
 
 - kb-ingest: Scan raw/, preprocess, output to raw/.extracted/
-- kb-compile: Read extracted files, extract entities, generate wiki pages
+- kb-compile: Read files, extract entities/concepts, generate wiki pages
 - kb-lint: Check wiki syntax and semantics
 - kb-query: Search wiki with optional raw backtracking
-- kb-archive: Write synthesis reports and integrate back into wiki
-- kb-status: Show dashboard (parse index.md + raw-registry.md)
+- kb-archive: Generate synthesis/comparison/overview, integrate into wiki
+- kb-status: Show dashboard
