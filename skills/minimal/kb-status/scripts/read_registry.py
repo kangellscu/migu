@@ -15,7 +15,7 @@ def main(kb_dir: str):
     data_lines = []
     in_table = False
     for line in lines:
-        if line.startswith("|------"):
+        if line.startswith("|") and ("---" in line or "------" in line):
             in_table = True
             continue
         if in_table and line.strip():
