@@ -21,12 +21,21 @@ version: "1.0"
 
 ## Reference Format
 
-Use Obsidian wikilinks: `[[Page Name]]`
-For file references: `[[raw/path/to/file.md|display name]]`
+Use Obsidian wikilinks:
+```
+[[PageName]]
+```
+
+For file references:
+```
+[[raw/<your-path>|<display-name>]]
+```
 
 source field in wiki documents:
+```
 ## 来源
-- source: [[raw/path/to/file.md]]
+- source: [[raw/<your-path>]]
+```
 
 ## Entity Types
 

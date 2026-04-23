@@ -1,3 +1,6 @@
+---
+type: institution
+---
 # {{name}}
 
 ## 基本信息

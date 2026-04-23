@@ -1,3 +1,6 @@
+---
+type: thought
+---
 # {{name}}
 
 ## 基本信息

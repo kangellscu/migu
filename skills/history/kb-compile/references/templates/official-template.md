@@ -1,3 +1,6 @@
+---
+type: official
+---
 # {{name}}
 
 ## 基本信息
