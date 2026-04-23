@@ -4,22 +4,30 @@ import sys
 from pathlib import Path
 
 
-def main(wiki_dir: str):
-    wiki = Path(wiki_dir)
+def main(kb_dir: str):
+    kb = Path(kb_dir)
+    if not kb.exists():
+        print(f"ERROR: Knowledge base directory not found", file=sys.stderr)
+        sys.exit(1)
+    
+    wiki = kb / "wiki"
     if not wiki.exists():
         print(f"ERROR: wiki/ directory not found", file=sys.stderr)
         sys.exit(1)
-
+    
+    agents_dir = kb / ".agents"
+    
     issues = []
     for md_file in sorted(wiki.rglob("*.md")):
+        if agents_dir.exists() and str(md_file).startswith(str(agents_dir)):
+            continue
+        
         content = md_file.read_text(encoding="utf-8")
         rel = md_file.relative_to(wiki)
 
-        # Check for source field
         if "## 来源" not in content and "- source:" not in content:
             issues.append(f"{rel}: missing '## 来源' section with source field")
 
-        # Check wikilink format (balanced brackets)
         open_count = content.count("[[")
         close_count = content.count("]]")
         if open_count != close_count:
@@ -36,6 +44,6 @@ def main(wiki_dir: str):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: syntax.py <wiki_dir>", file=sys.stderr)
+        print("Usage: syntax.py <kb_dir>", file=sys.stderr)
         sys.exit(1)
     main(sys.argv[1])
