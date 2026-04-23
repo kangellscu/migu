@@ -7,26 +7,26 @@ SCRIPTS = SKILLS_DIR / "kb-lint" / "scripts"
 
 
 def test_syntax_check_valid(tmp_path):
-    """Verify syntax.py passes on valid markdown."""
+    """Verify _syntax.py passes on valid markdown."""
     wiki = tmp_path / "wiki"
     wiki.mkdir()
     (wiki / "test.md").write_text("# Test\n\nContent here.\n\n## 来源\n- source: [[raw/test.md]]")
 
     result = subprocess.run(
-        [sys.executable, str(SCRIPTS / "syntax.py"), str(tmp_path)],
+        [sys.executable, str(SCRIPTS / "_syntax.py"), str(tmp_path)],
         capture_output=True, text=True,
     )
     assert result.returncode == 0
 
 
 def test_syntax_check_missing_source(tmp_path):
-    """Verify syntax.py detects missing source field."""
+    """Verify _syntax.py detects missing source field."""
     wiki = tmp_path / "wiki"
     wiki.mkdir()
     (wiki / "test.md").write_text("# Test\n\nContent.\n\n## 无关\nno source")
 
     result = subprocess.run(
-        [sys.executable, str(SCRIPTS / "syntax.py"), str(tmp_path)],
+        [sys.executable, str(SCRIPTS / "_syntax.py"), str(tmp_path)],
         capture_output=True, text=True,
     )
     assert result.returncode != 0
@@ -34,7 +34,7 @@ def test_syntax_check_missing_source(tmp_path):
 
 
 def test_syntax_check_filters_agents_dir(tmp_path):
-    """Verify syntax.py ignores files in .agents directory."""
+    """Verify _syntax.py ignores files in .agents directory."""
     wiki = tmp_path / "wiki"
     wiki.mkdir()
     agents = wiki / ".agents"
@@ -43,7 +43,7 @@ def test_syntax_check_filters_agents_dir(tmp_path):
     (wiki / "valid.md").write_text("# Valid\n\n## 来源\n- source: [[test]]")
 
     result = subprocess.run(
-        [sys.executable, str(SCRIPTS / "syntax.py"), str(tmp_path)],
+        [sys.executable, str(SCRIPTS / "_syntax.py"), str(tmp_path)],
         capture_output=True, text=True,
     )
     assert result.returncode == 0

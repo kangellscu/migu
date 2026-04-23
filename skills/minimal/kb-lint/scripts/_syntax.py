@@ -1,4 +1,4 @@
-"""Syntax check: markdown format, wikilink validity, source field."""
+"""Internal module - syntax check for wiki pages. Called by lint.py only."""
 
 import sys
 from pathlib import Path

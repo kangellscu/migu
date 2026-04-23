@@ -1,35 +1,35 @@
-"""Orchestrate lint checks."""
+"""Orchestrate lint checks by importing internal modules."""
 
-import subprocess
 import sys
 from pathlib import Path
+import importlib.util
+
+
+def load_module(module_path: Path):
+    spec = importlib.util.spec_from_file_location(module_path.stem, module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def main(kb_dir: str):
     scripts_dir = Path(__file__).parent
-
-    # Syntax check
-    wiki = Path(kb_dir) / "wiki"
-    result = subprocess.run(
-        [sys.executable, str(scripts_dir / "syntax.py"), str(wiki)],
-        capture_output=True, text=True,
-    )
-    print("Syntax:", result.stdout.strip())
-    syntax_ok = result.returncode == 0
-
-    # Semantic check
-    result = subprocess.run(
-        [sys.executable, str(scripts_dir / "semantic.py"), str(kb_dir)],
-        capture_output=True, text=True,
-    )
-    print("Semantic:", result.stdout.strip())
-    semantic_ok = result.returncode == 0
-
-    if syntax_ok and semantic_ok:
-        print("\nAll checks passed ✓")
-    else:
-        print("\nSome checks failed ✗")
+    kb = Path(kb_dir)
+    
+    if not kb.exists():
+        print(f"ERROR: Knowledge base not found: {kb_dir}", file=sys.stderr)
         sys.exit(1)
+    
+    syntax_module = load_module(scripts_dir / "_syntax.py")
+    semantic_module = load_module(scripts_dir / "_semantic.py")
+    
+    print("Running syntax check...")
+    syntax_module.main(kb_dir)
+    
+    print("Running semantic check...")
+    semantic_module.main(kb_dir)
+    
+    print("\nAll checks passed ✓")
 
 
 if __name__ == "__main__":

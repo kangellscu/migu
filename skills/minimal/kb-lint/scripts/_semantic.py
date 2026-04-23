@@ -1,4 +1,4 @@
-"""Semantic check: content consistency, template structure."""
+"""Internal module - semantic check for wiki pages. Called by lint.py only."""
 
 import sys
 from pathlib import Path
