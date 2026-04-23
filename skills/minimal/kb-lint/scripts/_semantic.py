@@ -15,8 +15,17 @@ def main(kb_dir: str):
         content = md_file.read_text(encoding="utf-8")
         rel = md_file.relative_to(wiki)
 
-        # Check title matches filename
-        title_line = content.strip().split("\n")[0]
+        # Skip YAML frontmatter
+        lines = content.strip().split("\n")
+        start = 0
+        if lines and lines[0] == "---":
+            for i, line in enumerate(lines[1:], 1):
+                if line == "---":
+                    start = i + 1
+                    break
+
+        # Check title exists after frontmatter
+        title_line = lines[start] if start < len(lines) else ""
         if not title_line.startswith("# "):
             issues.append(f"{rel}: missing title heading")
 
