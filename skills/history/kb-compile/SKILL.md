@@ -1,6 +1,6 @@
 ---
 name: kb-compile
-description: "Read extracted files, extract entities (person/place/event), generate wiki pages, update index.md and raw-registry.md. Use when user asks to compile knowledge base, generate wiki pages, or extract entities from sources."
+description: "Read extracted files, extract entities (person/place/event) and concepts (institution/official/thought), generate wiki pages, update index.md and raw-registry.md. Use when user asks to compile history knowledge base, generate wiki pages, or extract historical entities and concepts from sources."
 version: 1.0
 ---
 
@@ -18,7 +18,7 @@ version: 1.0
    - 产物路径 == `-`：调用 `read_file.py` 读取 raw 文件本身
 3. **LLM 实体提取**：
    - 阅读文档内容
-   - 提取实体：人物、地点、事件等
+   - 提取实体：人物、地点、事件、制度、官职、思想
    - 识别关系、消歧别名
    - 参考 references/templates/ 约束输出格式
 4. **LLM wiki 生成**：
@@ -42,9 +42,12 @@ version: 1.0
 
 | template | 用途 |
 |----------|------|
-| person-template.md | 人物实体页面格式 |
-| place-template.md | 地点实体页面格式 |
-| event-template.md | 事件实体页面格式 |
+| person-template.md | 历史人物页面格式 |
+| place-template.md | 历史地点页面格式 |
+| event-template.md | 历史事件页面格式 |
+| institution-template.md | 制度页面格式 |
+| official-template.md | 官职页面格式 |
+| thought-template.md | 思想页面格式 |
 
 ## scripts 使用说明
 
@@ -59,11 +62,11 @@ version: 1.0
 ## 输出摘要
 
 完成后输出：
-1. **处理结果**：生成 X 个 wiki 文档（Y 人物，Z 地点，W 事件）
+1. **处理结果**：生成 X 个 wiki 文档（Y 人物，Z 地点，W 事件，U 制度，V 官职，T 思想）
 2. **下一步提示**：可运行 kb-lint 检查 wiki 格式，或运行 kb-query 查询知识库
 
 示例：
 ```
-处理结果：生成 12 个 wiki 文档（5 人物，4 地点，3 事件）
+处理结果：生成 15 个 wiki 文档（5 人物，3 地点，2 事件，2 制度，2 官职，1 思想）
 下一步提示：可运行 kb-lint 检查 wiki 格式，或运行 kb-query 查询知识库
 ```

@@ -1,7 +1,7 @@
 ---
-title: kb-archive
+name: kb-archive
+description: "Write synthesis reports and integrate findings back into wiki entity pages. Use when user asks to archive findings, write synthesis, summarize research, or integrate analysis into knowledge base."
 version: 1.0
-created: 2026-04-22
 ---
 
 # kb-archive
@@ -38,3 +38,15 @@ kb-archive 必须在 kb-query 执行后的同一 agent session 中执行。
 | read_report.py | 读取 report 内容 | 步骤 2：从 agent 上下文读取 | 必须 |
 | create_synthesis.py | 创建 synthesis 文件 | 步骤 6：创建 synthesis 报告 | 必须 |
 | update_entity.py | 有机融入 wiki 文档 | 步骤 6：执行回写建议 | 必须 |
+
+## 输出摘要
+
+完成后输出：
+1. **处理结果**：生成 X 个 synthesis 报告，更新 Y 个实体页面
+2. **下一步提示**：可运行 kb-status 查看知识库状态，或运行 kb-lint 检查健康度
+
+示例：
+```
+处理结果：生成 2 个 synthesis 报告，更新 3 个实体页面
+下一步提示：可运行 kb-status 查看知识库状态，或运行 kb-lint 检查健康度
+```

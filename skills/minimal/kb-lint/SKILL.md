@@ -1,7 +1,7 @@
 ---
-title: kb-lint
+name: kb-lint
+description: "Check wiki pages for syntax errors (wikilink format, frontmatter) and semantic issues (orphan pages, missing sources). Use when user asks to lint wiki, check format, fix errors, or verify knowledge base quality."
 version: 1.0
-created: 2026-04-22
 ---
 
 # kb-lint
@@ -30,3 +30,15 @@ Wiki 检查（语法、语义、修复）。
 依赖类型说明：
 - 必须：流程步骤明确依赖该 script
 - 可选：agent 可判断是否需要调用
+
+## 输出摘要
+
+完成后输出：
+1. **处理结果**：X 个问题，Y 个已修复
+2. **下一步提示**：可运行 kb-query 查询知识库，或运行 kb-archive 进行综合分析
+
+示例：
+```
+处理结果：3 个问题，2 个已修复
+下一步提示：可运行 kb-query 查询知识库，或运行 kb-archive 进行综合分析
+```

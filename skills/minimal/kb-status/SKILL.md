@@ -1,7 +1,7 @@
 ---
-title: kb-status
+name: kb-status
+description: "Show knowledge base dashboard with file counts and processing status. Use when user asks to check KB status, see statistics, view dashboard, or wants overview of raw files and wiki pages."
 version: 1.0
-created: 2026-04-22
 ---
 
 # kb-status
@@ -34,3 +34,15 @@ created: 2026-04-22
 
 依赖类型说明：
 - 必须：流程步骤明确依赖该 script
+
+## 输出摘要
+
+完成后输出：
+1. **处理结果**：状态：X 个 raw 文件（Y 待处理），Z 个 wiki 文档
+2. **下一步提示**：可运行 kb-ingest 处理 raw 文件，或运行 kb-compile 开始编译
+
+示例：
+```
+处理结果：状态：10 个 raw 文件（5 待处理），8 个 wiki 文档
+下一步提示：可运行 kb-ingest 处理 raw 文件，或运行 kb-compile 开始编译
+```

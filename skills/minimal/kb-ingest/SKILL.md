@@ -1,7 +1,7 @@
 ---
-title: kb-ingest
+name: kb-ingest
+description: "Scan raw/ directory, preprocess files (normalize markdown, convert PDF, fix CJK radicals), output to raw/.extracted/, and update raw-registry.md. Use when user asks to ingest files, process raw sources, or prepare files for compilation."
 version: 1.0
-created: 2026-04-22
 ---
 
 # kb-ingest
@@ -15,7 +15,7 @@ created: 2026-04-22
 1. **扫描 raw/ 目录**：调用 `scan_raw.py` 检测所有文件（递归，排除 .extracted/）
 2. **对比 raw-registry.md**：找出未记录的文件，准备添加新条目
 3. **处理文件**：
-   - **markdown**：调用 `normalize_markdown.py` 检查编码，输出到 raw/.extracted/（如有修复）
+   - **markdown**：调用 `normalize_markdown.py` 检查编码、转换 CJK 部首，输出到 raw/.extracted/（如有修复）
    - **PDF**：调用 `convert_pdf.py` 转换为 markdown，输出到 raw/.extracted/
    - **image**：无需处理，直接引用
 4. **验证**：调用 `validate_batch.py` 检查 raw-registry.md 格式
@@ -51,3 +51,15 @@ created: 2026-04-22
 
 依赖类型说明：
 - 必须：流程步骤明确依赖该 script
+
+## 输出摘要
+
+完成后输出：
+1. **处理结果**：已处理 X 个文件，Y 个需转换
+2. **下一步提示**：可运行 kb-compile 开始编译，或运行 kb-lint 检查知识库健康度
+
+示例：
+```
+处理结果：已处理 5 个文件，2 个需转换
+下一步提示：可运行 kb-compile 开始编译，或运行 kb-lint 检查知识库健康度
+```
