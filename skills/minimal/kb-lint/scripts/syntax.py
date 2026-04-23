@@ -15,11 +15,9 @@ def main(kb_dir: str):
         print(f"ERROR: wiki/ directory not found", file=sys.stderr)
         sys.exit(1)
     
-    agents_dir = kb / ".agents"
-    
     issues = []
     for md_file in sorted(wiki.rglob("*.md")):
-        if agents_dir.exists() and str(md_file).startswith(str(agents_dir)):
+        if ".agents" in md_file.parts:
             continue
         
         content = md_file.read_text(encoding="utf-8")
