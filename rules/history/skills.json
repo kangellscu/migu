@@ -1,0 +1,10 @@
+{
+  "skills": [
+    {"name": "kb-ingest", "source": "minimal", "version": "1.0"},
+    {"name": "kb-compile", "source": "history", "version": "1.0"},
+    {"name": "kb-lint", "source": "minimal", "version": "1.0"},
+    {"name": "kb-query", "source": "minimal", "version": "1.0"},
+    {"name": "kb-archive", "source": "minimal", "version": "1.0"},
+    {"name": "kb-status", "source": "minimal", "version": "1.0"}
+  ]
+}
