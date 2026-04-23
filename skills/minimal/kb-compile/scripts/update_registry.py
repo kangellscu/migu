@@ -1,8 +1,38 @@
 """Update compilation status in raw-registry.md using column name matching."""
 
+import re
 import sys
 from pathlib import Path
 from datetime import datetime
+
+
+def parse_table_line(line):
+    """Parse markdown table line, handling escaped pipes (\\|)."""
+    placeholder = "\x00ESCAPED_PIPE\x00"
+    line = line.replace("\\|", placeholder)
+    cells = line.split("|")
+    cells = [c.replace(placeholder, "|") for c in cells]
+    return cells
+
+
+def format_table_line(cells):
+    """Format cells back to markdown table line with escaped pipes."""
+    placeholder = "\x00PIPE\x00"
+    formatted = []
+    for cell in cells:
+        formatted.append(cell.replace("|", "\\|"))
+    return "|".join(formatted)
+
+
+def extract_path_from_wikilink(cell):
+    """Extract file path from wikilink [[path|display]] or [[path]] or plain path."""
+    cell = cell.strip()
+    if cell.startswith("[[") and "]]" in cell:
+        end = cell.index("]]")
+        wikilink_content = cell[2:end]
+        cell_path = wikilink_content.split("|")[0].strip()
+        return cell_path
+    return cell
 
 
 def main(kb_dir: str, file_path: str, status: str):
@@ -25,7 +55,8 @@ def main(kb_dir: str, file_path: str, status: str):
         print("ERROR: Header row not found", file=sys.stderr)
         sys.exit(1)
     
-    header_cells = [c.strip() for c in lines[header_line].split("|")[1:-1]]
+    header_cells = parse_table_line(lines[header_line])[1:-1]
+    header_cells = [c.strip() for c in header_cells]
     
     try:
         compile_status_idx = header_cells.index("编译状态")
@@ -38,14 +69,15 @@ def main(kb_dir: str, file_path: str, status: str):
     for i, line in enumerate(lines):
         if i <= header_line + 1:
             continue
-        cells = line.split("|")
+        cells = parse_table_line(line)
         if len(cells) > 1:
             first_cell = cells[1].strip()
-            if file_path == first_cell or f"[[{file_path}" in first_cell:
+            cell_path = extract_path_from_wikilink(first_cell)
+            if cell_path == file_path:
                 if len(cells) > max(compile_status_idx, last_processed_idx) + 1:
                     cells[compile_status_idx + 1] = f" {status} "
                     cells[last_processed_idx + 1] = f" {today} "
-                    lines[i] = "|".join(cells)
+                    lines[i] = format_table_line(cells)
                     updated = True
                     break
     
