@@ -38,14 +38,16 @@ def main(kb_dir: str, file_path: str, status: str):
     for i, line in enumerate(lines):
         if i <= header_line + 1:
             continue
-        if file_path in line:
-            cells = line.split("|")
-            if len(cells) > max(compile_status_idx, last_processed_idx) + 1:
-                cells[compile_status_idx + 1] = f" {status} "
-                cells[last_processed_idx + 1] = f" {today} "
-                lines[i] = "|".join(cells)
-                updated = True
-                break
+        cells = line.split("|")
+        if len(cells) > 1:
+            first_cell = cells[1].strip()
+            if file_path == first_cell or f"[[{file_path}" in first_cell:
+                if len(cells) > max(compile_status_idx, last_processed_idx) + 1:
+                    cells[compile_status_idx + 1] = f" {status} "
+                    cells[last_processed_idx + 1] = f" {today} "
+                    lines[i] = "|".join(cells)
+                    updated = True
+                    break
     
     if updated:
         registry.write_text("\n".join(lines))
