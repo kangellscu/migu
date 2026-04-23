@@ -42,12 +42,12 @@ version: 1.0
 
 ## scripts 使用说明
 
-| script | 用途 | 调用时机 | 依赖类型 |
-|--------|------|---------|---------|
-| scan_raw.py | 扫描 raw/ 目录，检测新文件 | 步骤 1：检测新文件 | 必须 |
-| validate_batch.py | 验证 raw-registry.md 格式 | 步骤 4：验证格式 | 必须 |
-| normalize_markdown.py | 规范化 markdown 文件 | 步骤 3：处理 markdown | 必须 |
-| convert_pdf.py | 转换 PDF 为 markdown | 步骤 3：处理 PDF | 必须 |
+| script | 用途 | 调用时机 | 参数 | 依赖类型 |
+|--------|------|---------|------|---------|
+| scan_raw.py | 扫描 raw/ 目录，检测新文件 | 步骤 1：检测新文件 | <kb_dir> | 必须 |
+| validate_batch.py | 验证 raw-registry.md 格式 | 步骤 4：验证格式 | - | 必须 |
+| normalize_markdown.py | 规范化 markdown 文件 | 步骤 3：处理 markdown | - | 必须 |
+| convert_pdf.py | 转换 PDF 为 markdown | 步骤 3：处理 PDF | - | 必须 |
 
 依赖类型说明：
 - 必须：流程步骤明确依赖该 script
