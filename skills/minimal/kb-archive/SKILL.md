@@ -45,6 +45,11 @@ kb-archive 必须在 kb-query 执行后的同一 agent session 中执行。
 1. **处理结果**：生成 X 个 synthesis 报告，更新 Y 个实体页面
 2. **下一步提示**：可运行 kb-status 查看知识库状态，或运行 kb-lint 检查健康度
 
+**Synthesis 页面类型**：kb-archive 生成的分析页面存储在 `wiki/synthesis/`，通过 frontmatter type 字段区分：
+- `synthesis`: 综合分析报告
+- `comparison`: 对比分析
+- `overview`: 概述页面
+
 示例：
 ```
 处理结果：生成 2 个 synthesis 报告，更新 3 个实体页面
