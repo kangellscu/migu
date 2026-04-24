@@ -159,21 +159,12 @@ kb-lint Report
 | orphan pages | 建议添加到哪个 section（基于路径推断） |
 | broken wikilinks | 建议创建缺失页面或删除链接 |
 
-**suggest_section 推断逻辑**：
+**suggest_section 推断意图**：
 
-```python
-def infer_section(file_path, wiki_dir):
-    rel_path = file_path.relative_to(wiki_dir)
-    parts = rel_path.parts
-    
-    # minimal: wiki/entities/foo.md → entities
-    # history: wiki/entities/人物/刘邦.md → 人物
-    
-    if len(parts) >= 2:
-        return parts[1] if parts[1] != parts[0] else parts[0]
-    else:
-        return parts[0]
-```
+脚本应根据文件路径推断建议添加的 section：
+- minimal 版本：`wiki/entities/foo.md` → 建议添加到 "entities" section
+- history 版本：`wiki/entities/人物/刘邦.md` → 建议添加到 "人物" section
+- 边界情况：文件直接在顶层目录（无子目录）时，建议添加到父目录对应的 section
 
 ---
 
