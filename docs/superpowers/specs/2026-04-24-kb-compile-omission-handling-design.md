@@ -441,3 +441,40 @@ agent：
 
 **提交记录**：
 - `7f5e991`: minimal 版本通用化例子
+
+---
+
+## 13. Bug 修复记录
+
+### Bug 1：index.md 位置错误（2026-04-24）
+
+**问题**：执行 compile 后，在 wiki/ 下创建了 wiki/index.md，而非更新根目录 index.md。
+
+**根因**：SKILL.md 步骤 5 未明确 index.md 位置。
+
+**改进内容**：
+- 步骤 5：明确 `(根目录)`
+- 新增检查：若 wiki/index.md 存在，删除并合并内容到根目录 index.md
+
+**提交记录**：
+- `fa6bf74`: kb-compile minimal 修复
+- `3ba2881`: kb-compile history 修复
+
+### Bug 2：log.md 未更新（2026-04-24）
+
+**问题**：kb-ingest 和 kb-compile 执行后未更新根目录 log.md。
+
+**根因**：SKILL.md 未包含更新 log.md 的步骤。
+
+**改进内容**：
+
+**kb-compile**：
+- 新增步骤 6：`更新 log.md（根目录）`
+
+**kb-ingest**：
+- 新增步骤 6：`更新 log.md（根目录）`
+
+**提交记录**：
+- `fa6bf74`: kb-compile minimal 修复
+- `3ba2881`: kb-compile history 修复
+- `515018f`: kb-ingest minimal 修复
