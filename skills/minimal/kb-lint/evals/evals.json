@@ -1,0 +1,23 @@
+{
+  "skill_name": "kb-lint",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "lint wiki",
+      "expected_output": "摘要报告，显示格式、结构、内容问题数量",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "lint 详细",
+      "expected_output": "完整报告，包含问题详情和建议",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "lint 并修复",
+      "expected_output": "摘要报告 + 自动修复格式问题",
+      "files": []
+    }
+  ]
+}

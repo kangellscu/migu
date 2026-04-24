@@ -27,7 +27,8 @@ def main(kb_dir: str):
         # Check title exists after frontmatter
         title_line = lines[start] if start < len(lines) else ""
         if not title_line.startswith("# "):
-            issues.append(f"{rel}: missing title heading")
+            inferred_title = infer_title(md_file.stem)
+            issues.append(f"{rel}: missing title heading (suggestion: # {inferred_title})")
 
     if issues:
         print("SEMANTIC ISSUES:")
@@ -36,6 +37,11 @@ def main(kb_dir: str):
         sys.exit(1)
     else:
         print("SEMANTIC OK")
+
+
+def infer_title(file_name: str) -> str:
+    """Infer title from file name."""
+    return file_name
 
 
 if __name__ == "__main__":

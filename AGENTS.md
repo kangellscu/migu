@@ -14,10 +14,6 @@ migu 是脚手架项目，用于快速搭建 LLM-WIKI 知识库。
 - **rules**：定义知识库 schema（目录结构、命名规范）
 - **skills**：操作知识库（ingest、compile、lint 等）
 
-## Superpowers 工作流
-
-本项目遵循 using-superpowers skill 定义的工作流。
-
 ## 主要目录
 
 ```
@@ -35,10 +31,18 @@ docs/superpowers/specs/  # 设计文档
 - typer（CLI 框架）
 - pytest（测试）
 
-## 工作原则
+## **工作原则**
 
+### 编码规则
 - **简单优先**：最小代码解决问题。不做未请求的功能、抽象或配置。
 - **手术式变更**：只触碰必要代码。不重构不相关代码，匹配现有风格。
+
+### Superpowers 工作流
+本项目遵循 using-superpowers skill 定义的工作流。
+
+### Spec文档规范
+- Spec的核心定位是What，而不是How，不应该放入具体的代码实现
+- 重点关注功能应该做什么，输入输出的约束
 
 ## 开发命令
 
