@@ -60,8 +60,9 @@ version: 2.0
    - 无：根据 templates 创建新文档
    - 有：阅读现有内容，合并新信息（增量更新）
    - wiki 文档 source 字段：`- source: [[raw/path/to/source.md]]`
-5. **更新 index.md**：添加新页面索引到对应 section
-6. **更新 raw-registry.md**：调用 `update_registry.py`
+5. **更新 index.md**（根目录）：添加新页面索引到对应 section
+6. **更新 log.md**（根目录）：追加 compile 操作记录
+7. **更新 raw-registry.md**（根目录）：调用 `update_registry.py`
    - 编译状态：已编译 / 部分编译
    - 剩余遗漏：空 / 实体1, 实体2, ...（逗号分隔）
    - 最近处理日期：当前日期
