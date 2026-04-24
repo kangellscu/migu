@@ -25,7 +25,7 @@ def main(kb_dir: str):
         wiki_pages.add(md_file.stem)
     
     # 2. 解析每个页面的 wikilinks，验证引用是否存在
-    issues = []
+    issues_by_file = {}
     wikilink_pattern = re.compile(r'\[\[([^\]]+)\]\]')
     
     for md_file in wiki.rglob("*.md"):
@@ -48,12 +48,16 @@ def main(kb_dir: str):
             
             # 验证引用是否存在
             if page_name not in wiki_pages:
-                issues.append(f"{rel}: broken link [[{page_name}]]")
+                if str(rel) not in issues_by_file:
+                    issues_by_file[str(rel)] = []
+                issues_by_file[str(rel)].append(f"[[{page_name}]]")
     
-    if issues:
+    if issues_by_file:
         print("BROKEN LINKS:")
-        for issue in sorted(issues):
-            print(f"  {issue}")
+        for file in sorted(issues_by_file.keys()):
+            links = issues_by_file[file]
+            print(f"  - {file}")
+            print(f"    {', '.join(links)}")
         sys.exit(1)
     else:
         print("BROKEN LINKS OK")
