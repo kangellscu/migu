@@ -22,12 +22,20 @@ def main(kb_dir: str):
     
     syntax_module = load_module(scripts_dir / "_syntax.py")
     semantic_module = load_module(scripts_dir / "_semantic.py")
+    orphans_module = load_module(scripts_dir / "_orphans.py")
+    broken_links_module = load_module(scripts_dir / "_broken_links.py")
     
     print("Running syntax check...")
     syntax_module.main(kb_dir)
     
     print("Running semantic check...")
     semantic_module.main(kb_dir)
+    
+    print("Running orphan pages check...")
+    orphans_module.main(kb_dir)
+    
+    print("Running broken links check...")
+    broken_links_module.main(kb_dir)
     
     print("\nAll checks passed ✓")
 
