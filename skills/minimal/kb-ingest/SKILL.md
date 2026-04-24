@@ -19,10 +19,11 @@ version: 1.0
    - **PDF**：调用 `convert_pdf.py` 转换为 markdown，输出到 raw/.extracted/
    - **image**：无需处理，直接引用
 4. **验证**：调用 `validate_batch.py` 检查 raw-registry.md 格式
-5. **更新 raw-registry.md**：
+5. **更新 raw-registry.md**（根目录）：
    - 预处理状态：已处理 / 无需处理
    - 产物路径：有产物时记录路径，无产物时 `-`
    - 最近处理日期：当前日期
+6. **更新 log.md**（根目录）：追加 ingest 操作记录
 
 ## 类型判断
 
