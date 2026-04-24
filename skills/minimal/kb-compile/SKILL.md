@@ -1,6 +1,6 @@
 ---
 name: kb-compile
-description: "Read extracted files, extract entities (person/place/event), generate wiki pages, update index.md and raw-registry.md. Use when user asks to compile knowledge base, generate wiki pages, or extract entities from sources."
+description: "Read files, extract entities and concepts (dynamic classification), generate wiki pages. Use when user asks to compile knowledge base or extract information from sources."
 version: 1.0
 ---
 
@@ -8,7 +8,7 @@ version: 1.0
 
 ## 职责
 
-读取 raw/.extracted/ 或 raw/ 文件，LLM 提取实体，生成 wiki 页面。
+读取 raw/.extracted/ 或 raw/ 文件，LLM 提取实体和概念，生成 wiki 页面。
 
 ## 执行流程
 
@@ -16,13 +16,16 @@ version: 1.0
 2. **读取文件内容**：
    - 产物路径 != `-`：调用 `read_file.py` 读取产物路径对应文件
    - 产物路径 == `-`：调用 `read_file.py` 读取 raw 文件本身
-3. **LLM 实体提取**：
+3. **LLM 信息提取**：
    - 阅读文档内容
-   - 提取实体：人物、地点、事件等
+   - 提取信息片段
+   - 动态判断类型：
+     - **实体**：具体、可命名、有时空属性（人物、地点、组织、物品等）
+     - **概念**：抽象、主题性、无时空属性（思想、制度、文化等）
    - 识别关系、消歧别名
-   - 参考 references/templates/ 约束输出格式
+   - 参考 templates 约束输出格式
 4. **LLM wiki 生成**：
-   - 检查 wiki/ 是否已有对应实体文档
+   - 检查 wiki/ 是否已有对应文档
    - 无：根据 templates 创建新文档
    - 有：阅读现有内容，合并新信息（增量更新）
    - wiki 文档 source 字段：`- source: [[raw/path/to/source.md]]`
@@ -38,13 +41,27 @@ version: 1.0
 | 关系去重 | 判断两个关系是否重复，合并 |
 | 结构调整 | 根据信息量调整页面结构 |
 
+## 实体 vs 概念识别
+
+LLM 根据内容特征动态判断：
+
+| 特征 | 实体倾向 | 概念倾向 |
+|------|---------|---------|
+| 时间属性 | 有具体时间（生卒、成立时间） | 无具体时间 |
+| 地点属性 | 有具体地点（出生地、所在地） | 无具体地点 |
+| 可命名性 | 具体个体（可指认） | 抽象类别（无法指认） |
+| 参与者 | 通常有参与者 | 无参与者概念 |
+
+**输出对应目录**：
+- `type: entity` → wiki/entities/
+- `type: concept` → wiki/concepts/
+
 ## templates 说明
 
 | template | 用途 |
 |----------|------|
-| person-template.md | 人物实体页面格式 |
-| place-template.md | 地点实体页面格式 |
-| event-template.md | 事件实体页面格式 |
+| entity-template.md | 实体页面格式 |
+| concept-template.md | 概念页面格式 |
 
 ## scripts 使用说明
 
@@ -59,11 +76,11 @@ version: 1.0
 ## 输出摘要
 
 完成后输出：
-1. **处理结果**：生成 X 个 wiki 文档（Y 人物，Z 地点，W 事件）
+1. **处理结果**：生成 X 个 wiki 文档（Y 实体，Z 概念）
 2. **下一步提示**：可运行 kb-lint 检查 wiki 格式，或运行 kb-query 查询知识库
 
 示例：
 ```
-处理结果：生成 12 个 wiki 文档（5 人物，4 地点，3 事件）
+处理结果：生成 8 个 wiki 文档（5 实体，3 概念）
 下一步提示：可运行 kb-lint 检查 wiki 格式，或运行 kb-query 查询知识库
 ```
