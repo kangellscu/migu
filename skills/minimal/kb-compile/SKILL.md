@@ -68,7 +68,6 @@ wiki 文档生成后需验证以下内容：
 | type | ✓ | entity \| concept | `type: entity` |
 | subtype | ✓ | 预定义或自定义 | `subtype: person` |
 | date | ✓ | YYYY-MM-DD | `date: 2026-04-27` |
-| source | ✓ | wikilink | `source: [[raw/path/file.md]]` |
 
 ### 结构验证
 
@@ -79,7 +78,6 @@ wiki 文档生成后需验证以下内容：
 ### 格式验证
 
 - wikilink 使用 `[[页面名]]` 格式
-- source 字段使用 `[[raw/path/file.md]]` 格式
 - 关系列表使用 `- [[实体名]]` 格式
 
 验证失败时输出告警，建议运行 kb-lint 详细检查。
