@@ -10,10 +10,13 @@ Domain-specific types defined in derived rules (history, legal, etc.).
 
 - `raw/`: Raw source files (user managed, immutable)
 - `raw/.extracted/`: Processed files from kb-ingest
+- `raw-registry.md`: Raw file registry (root level)
+- `index.md`: Knowledge base index (root level)
+- `log.md`: Operation log (root level)
 - `wiki/`: LLM-generated structured documents
-  - `entities/`: Entity pages (persons, places, organizations, etc.)
-  - `concepts/`: Concept pages and summaries
-  - `synthesis/`: Analysis pages (synthesis, comparisons, overview)
+  - `entities/`: Entity pages
+  - `concepts/`: Concept pages
+  - `synthesis/`: Analysis pages
 - `output/`: User-generated derivative documents
 
 ## Wiki Page Types
