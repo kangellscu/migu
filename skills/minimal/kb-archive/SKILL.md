@@ -29,7 +29,8 @@ kb-archive 必须在 kb-query 执行后的同一 agent session 中执行。
 6. **根据选择执行**：
    - 调用 `create_synthesis.py` 创建 synthesis 文件（不含回写建议）
    - 调用 `update_entity.py` 有机融入 wiki 实体文档
-7. **更新 index.md**：添加新报告索引
+ 7. **更新 index.md**（根目录）：添加新页面索引到 synthesis section ⚠️ **必须执行**
+ 8. **更新 log.md**（根目录）：追加 archive 操作记录 ⚠️ **必须执行**
 
 ## scripts 使用说明
 
@@ -54,4 +55,21 @@ kb-archive 必须在 kb-query 执行后的同一 agent session 中执行。
 ```
 处理结果：生成 2 个 synthesis 报告，更新 3 个实体页面
 下一步提示：可运行 kb-status 查看知识库状态，或运行 kb-lint 检查健康度
+```
+
+## 输出验证
+
+完成后必须输出以下验证信息：
+- ✓ synthesis 文件: wiki/synthesis/xxx.md (已创建)
+- ✓ index.md (已更新 - synthesis section)
+- ✓ log.md (已更新)
+- ✓ 实体更新: X 个实体页面 (已更新/无更新)
+
+格式示例：
+```
+处理结果：生成 1 个 synthesis 报告，更新 4 个实体页面
+验证：✓ wiki/synthesis/楚汉战争关键人物决策分析.md 已创建
+      ✓ index.md synthesis section 已更新
+      ✓ log.md 已追加 archive 记录
+下一步提示：可运行 kb-status 查看知识库状态
 ```
