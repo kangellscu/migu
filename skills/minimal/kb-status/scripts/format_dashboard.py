@@ -53,6 +53,14 @@ def main():
     print(f"│ Pending Compile:   {pending_compile} files")
     print("└─────────────────────────────────────────────────┘")
     
+    if pending_ingest == 0 and pending_compile == 0:
+        print()
+        print("┌─────────────────────────────────────────────────┐")
+        print("│ Status                                            │")
+        print("├─────────────────────────────────────────────────┤")
+        print("│ All up to date                                    │")
+        print("└─────────────────────────────────────────────────┘")
+    
     if pending_files:
         print()
         print("┌─────────────────────────────────────────────────┐")
