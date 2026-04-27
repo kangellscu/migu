@@ -89,3 +89,24 @@ migu = "migu.cli:app"
  开发前阅读：
 - `docs/superpowers/specs/2026-04-17-migu-scaffold-design.md`（架构层）
 - `docs/superpowers/specs/2026-04-21-skills-implementation-guide.md`（实现层）
+
+## Skill 测评规范
+
+使用 skill-creator 测评 migu skills 时遵循以下约束：
+
+### 断言设计
+- 所有断言必须引用 skill spec（SKILL.md）作为基准
+- 仅验证行为断言（是否符合 spec），不验证主观风格
+- 断言文本包含 spec 引用（如 "spec: SKILL.md 边界情况表格"）
+
+### 边界测试覆盖
+- 必须覆盖 SKILL.md 定义的所有边界情况
+- 每个边界情况至少 1 个测试用例
+- 测试用例验证 spec 定义的预期处理方式
+
+### 数据采集
+- timing 数据来自 subagent notification（真实运行数据）
+- grading 使用独立 grader agent（避免主观偏见）
+- grading.json 使用 text/passed/evidence 字段
+
+**详细规范**: `docs/superpowers/specs/2026-04-27-skill-evaluation-constraints.md`
