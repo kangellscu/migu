@@ -29,8 +29,8 @@ kb-archive 必须在 kb-query 执行后的同一 agent session 中执行。
 6. **根据选择执行**：
    - 调用 `create_synthesis.py` 创建 synthesis 文件（不含回写建议）
    - 调用 `update_entity.py` 有机融入 wiki 实体文档
- 7. **更新 index.md**（根目录）：添加新页面索引到 synthesis section ⚠️ **必须执行**
- 8. **更新 log.md**（根目录）：追加 archive 操作记录 ⚠️ **必须执行**
+8. **更新 index.md**（根目录）：添加新页面索引到 synthesis section ⚠️ **必须执行**
+  9. **更新 log.md**（根目录）：追加 archive 操作记录 ⚠️ **必须执行**
 
 ## scripts 使用说明
 
