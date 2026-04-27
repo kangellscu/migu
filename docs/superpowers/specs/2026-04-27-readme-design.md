@@ -146,9 +146,9 @@ cp ~/documents/史记-项羽本纪.md my-kb/raw/
 mkdir my-kb/raw/史记
 cp ~/documents/史记-高祖本纪.md my-kb/raw/史记/
 
-# View status
+# View installed skills
 cd my-kb
-migu status
+migu skill list
 ```
 
 Use skills to process your knowledge base:
