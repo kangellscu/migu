@@ -1,7 +1,8 @@
 ---
 name: kb-archive
 description: "Write synthesis reports and integrate findings back into wiki entity pages. Use when user asks to archive findings, write synthesis, summarize research, or integrate analysis into knowledge base."
-version: 1.0
+metadata:
+  version: 1.0
 ---
 
 # kb-archive

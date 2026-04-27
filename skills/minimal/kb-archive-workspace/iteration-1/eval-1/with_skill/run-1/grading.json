@@ -1,0 +1,49 @@
+{
+  "expectations": [
+    {
+      "text": "synthesis-created",
+      "passed": true,
+      "evidence": "Created synthesis report: wiki/synthesis/楚汉战争关键人物决策分析.md with proper frontmatter"
+    },
+    {
+      "text": "synthesis-quality",
+      "passed": true,
+      "evidence": "Synthesis file has clean frontmatter, includes all required sections"
+    },
+    {
+      "text": "entities-updated",
+      "passed": true,
+      "evidence": "Updated 4 entity pages with new sections and synthesis backlinks"
+    },
+    {
+      "text": "backlinks-added",
+      "passed": true,
+      "evidence": "Bidirectional links: synthesis → entities and entities → synthesis"
+    },
+    {
+      "text": "index-updated",
+      "passed": false,
+      "evidence": "SKILL.md step 7 requires updating index.md, but this was missed. Added manually after user reported the issue."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  },
+  "timing": {
+    "total_duration_seconds": 5.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 10,
+      "Write": 2,
+      "Edit": 5,
+      "Bash": 2
+    },
+    "total_tool_calls": 19,
+    "files_created": ["wiki/synthesis/楚汉战争关键人物决策分析.md"],
+    "files_modified": ["wiki/entities/刘邦.md", "wiki/entities/项羽.md", "wiki/entities/韩信.md", "wiki/entities/张良.md", "index.md"]
+  }
+}

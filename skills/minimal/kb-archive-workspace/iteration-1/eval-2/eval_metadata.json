@@ -1,0 +1,22 @@
+{
+  "eval_id": 2,
+  "eval_name": "without-report-error",
+  "prompt": "请使用 kb-archive skill 生成 synthesis 报告。\n\n知识库路径：/Users/23mofang/Documents/knowledge-bases/test",
+  "assertions": [
+    {
+      "name": "error-message-shown",
+      "description": "显示错误提示，告知用户需要先运行 kb-query",
+      "check": "输出包含提示信息，说明 report 不存在或需要先运行 kb-query"
+    },
+    {
+      "name": "no-files-created",
+      "description": "没有创建任何 synthesis 文件",
+      "check": "wiki/synthesis/ 目录中没有新文件"
+    },
+    {
+      "name": "no-entities-updated",
+      "description": "没有更新任何实体页面",
+      "check": "wiki/entities/ 目录中的文件没有修改"
+    }
+  ]
+}

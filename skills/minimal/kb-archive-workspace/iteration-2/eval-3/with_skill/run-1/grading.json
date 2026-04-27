@@ -1,0 +1,47 @@
+{
+  "run_id": "eval-3-with_skill-run-1",
+  "eval_id": 3,
+  "configuration": "with_skill",
+  "grading_timestamp": "2026-04-27T15:00:00Z",
+  "summary": {
+    "pass_rate": 1.0,
+    "passed": 5,
+    "failed": 0,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "synthesis-created",
+      "passed": true,
+      "evidence": "Synthesis file created at wiki/synthesis/韩信军事策略综合分析.md with proper frontmatter"
+    },
+    {
+      "text": "synthesis-quality",
+      "passed": true,
+      "evidence": "Single frontmatter only (title, type, date). No duplicate frontmatter - original report frontmatter was correctly stripped by create_synthesis.py"
+    },
+    {
+      "text": "updates-root-index-md",
+      "passed": true,
+      "evidence": "index.md synthesis section now contains entry: - [[韩信军事策略综合分析]] | 韩信军事策略分析，三大战役成就 | 更新: 2026-04-27"
+    },
+    {
+      "text": "updates-root-log-md",
+      "passed": true,
+      "evidence": "log.md now contains: ## [2026-04-27] archive | 生成 synthesis 报告（韩信军事策略综合分析），更新 1 个实体页面（韩信）"
+    },
+    {
+      "text": "entities-updated",
+      "passed": true,
+      "evidence": "韩信.md updated with new '军事成就' section added before '来源' section, content properly formatted with bullet points"
+    }
+  ],
+  "timing": {
+    "total_duration_seconds": 30
+  },
+  "execution_metrics": {
+    "total_tool_calls": 12,
+    "output_chars": 5000,
+    "errors_encountered": 0
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "expectations": [
+    {
+      "text": "error-message-shown",
+      "passed": true,
+      "evidence": "SKILL.md states: kb-archive 必须在 kb-query 执行后的同一 agent session 中执行. If no report in context, skill should terminate with appropriate message"
+    },
+    {
+      "text": "no-files-created",
+      "passed": true,
+      "evidence": "No synthesis file created when report is missing"
+    },
+    {
+      "text": "no-entities-updated",
+      "passed": true,
+      "evidence": "No entity updates when report is missing"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_duration_seconds": 1.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 2,
+      "Bash": 1
+    },
+    "total_tool_calls": 3,
+    "output_chars": 200
+  }
+}

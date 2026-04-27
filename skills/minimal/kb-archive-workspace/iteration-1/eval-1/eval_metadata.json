@@ -1,0 +1,27 @@
+{
+  "eval_id": 1,
+  "eval_name": "with-report-archive",
+  "prompt": "我有一个关于刘邦和项羽领导风格对比的 report（在当前目录的 test-report.md 文件中），请使用 kb-archive skill 生成 synthesis 报告，并执行所有回写建议（选择 yes）。\n\n知识库路径：/Users/23mofang/Documents/knowledge-bases/test",
+  "assertions": [
+    {
+      "name": "synthesis-created",
+      "description": "在 wiki/synthesis/ 目录中创建了新的 synthesis 报告文件",
+      "check": "文件存在且包含 frontmatter type: synthesis"
+    },
+    {
+      "name": "entities-updated",
+      "description": "更新了刘邦、项羽、张良、范增等实体页面",
+      "check": "实体页面中添加了新章节或内容"
+    },
+    {
+      "name": "synthesis-quality",
+      "description": "Synthesis 报告包含分析、结论、相关实体等章节",
+      "check": "文件包含 ## 分析、## 结论、## 相关实体 等章节"
+    },
+    {
+      "name": "backlinks-added",
+      "description": "在 synthesis 报告中添加了到相关实体的 wikilink",
+      "check": "文件中包含 [[刘邦]], [[项羽]] 等 wikilink"
+    }
+  ]
+}

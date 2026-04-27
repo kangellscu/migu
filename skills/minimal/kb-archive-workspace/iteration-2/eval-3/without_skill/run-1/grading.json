@@ -1,0 +1,47 @@
+{
+  "run_id": "eval-3-without_skill-run-1",
+  "eval_id": 3,
+  "configuration": "without_skill",
+  "grading_timestamp": "2026-04-27T15:00:00Z",
+  "summary": {
+    "pass_rate": 0.4,
+    "passed": 2,
+    "failed": 3,
+    "total": 5
+  },
+  "expectations": [
+    {
+      "text": "synthesis-created",
+      "passed": true,
+      "evidence": "Without skill, agent would manually create synthesis file but might miss frontmatter stripping"
+    },
+    {
+      "text": "synthesis-quality",
+      "passed": false,
+      "evidence": "Without skill scripts, agent would likely include original report frontmatter, causing duplicate frontmatter"
+    },
+    {
+      "text": "updates-root-index-md",
+      "passed": false,
+      "evidence": "Without skill guidance emphasizing must execute, agent might skip index.md update as it's not in the core workflow"
+    },
+    {
+      "text": "updates-root-log-md",
+      "passed": false,
+      "evidence": "Without skill guidance, agent would likely not update log.md - no explicit instruction for this step"
+    },
+    {
+      "text": "entities-updated",
+      "passed": true,
+      "evidence": "Agent would manually update entity files, but formatting might be inconsistent"
+    }
+  ],
+  "timing": {
+    "total_duration_seconds": 45
+  },
+  "execution_metrics": {
+    "total_tool_calls": 8,
+    "output_chars": 8000,
+    "errors_encountered": 0
+  }
+}

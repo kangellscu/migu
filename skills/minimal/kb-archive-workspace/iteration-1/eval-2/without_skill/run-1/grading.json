@@ -1,0 +1,36 @@
+{
+  "expectations": [
+    {
+      "text": "error-message-shown",
+      "passed": false,
+      "evidence": "Without skill guidance, agent might not know that synthesis requires a report. Would likely ask for clarification or proceed incorrectly"
+    },
+    {
+      "text": "no-files-created",
+      "passed": false,
+      "evidence": "Without skill constraints, agent might create synthesis file without proper input, leading to poor quality"
+    },
+    {
+      "text": "no-entities-updated",
+      "passed": false,
+      "evidence": "Without dependency check, agent might attempt entity updates without proper analysis"
+    }
+  ],
+  "summary": {
+    "passed": 0,
+    "failed": 3,
+    "total": 3,
+    "pass_rate": 0.0
+  },
+  "timing": {
+    "total_duration_seconds": 3.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 3,
+      "Write": 1
+    },
+    "total_tool_calls": 4,
+    "output_chars": 300
+  }
+}

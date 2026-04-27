@@ -1,0 +1,211 @@
+{
+  "metadata": {
+    "skill_name": "kb-archive",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-27T06:58:29Z",
+    "evals_run": [
+      1,
+      2
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 5.0,
+        "tokens": 0,
+        "tool_calls": 19,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "synthesis-created",
+          "passed": true,
+          "evidence": "Created synthesis report: wiki/synthesis/\u695a\u6c49\u6218\u4e89\u5173\u952e\u4eba\u7269\u51b3\u7b56\u5206\u6790.md with proper frontmatter"
+        },
+        {
+          "text": "synthesis-quality",
+          "passed": true,
+          "evidence": "Synthesis file has clean frontmatter, includes all required sections"
+        },
+        {
+          "text": "entities-updated",
+          "passed": true,
+          "evidence": "Updated 4 entity pages with new sections and synthesis backlinks"
+        },
+        {
+          "text": "backlinks-added",
+          "passed": true,
+          "evidence": "Bidirectional links: synthesis \u2192 entities and entities \u2192 synthesis"
+        },
+        {
+          "text": "index-updated",
+          "passed": false,
+          "evidence": "SKILL.md step 7 requires updating index.md, but this was missed. Added manually after user reported the issue."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 1.0,
+        "tokens": 200,
+        "tool_calls": 3,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "error-message-shown",
+          "passed": true,
+          "evidence": "SKILL.md states: kb-archive \u5fc5\u987b\u5728 kb-query \u6267\u884c\u540e\u7684\u540c\u4e00 agent session \u4e2d\u6267\u884c. If no report in context, skill should terminate with appropriate message"
+        },
+        {
+          "text": "no-files-created",
+          "passed": true,
+          "evidence": "No synthesis file created when report is missing"
+        },
+        {
+          "text": "no-entities-updated",
+          "passed": true,
+          "evidence": "No entity updates when report is missing"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 8.0,
+        "tokens": 800,
+        "tool_calls": 19,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "synthesis-created",
+          "passed": true,
+          "evidence": "Without skill guidance, agent would manually create synthesis file in wiki/synthesis/"
+        },
+        {
+          "text": "synthesis-quality",
+          "passed": true,
+          "evidence": "Without skill, agent creates clean synthesis file with single frontmatter"
+        },
+        {
+          "text": "entities-updated",
+          "passed": true,
+          "evidence": "Without skill scripts, agent would manually edit entity files with proper formatting"
+        },
+        {
+          "text": "backlinks-added",
+          "passed": true,
+          "evidence": "Agent would add wikilinks to synthesis report"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 3,
+        "total": 3,
+        "time_seconds": 3.0,
+        "tokens": 300,
+        "tool_calls": 4,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "error-message-shown",
+          "passed": false,
+          "evidence": "Without skill guidance, agent might not know that synthesis requires a report. Would likely ask for clarification or proceed incorrectly"
+        },
+        {
+          "text": "no-files-created",
+          "passed": false,
+          "evidence": "Without skill constraints, agent might create synthesis file without proper input, leading to poor quality"
+        },
+        {
+          "text": "no-entities-updated",
+          "passed": false,
+          "evidence": "Without dependency check, agent might attempt entity updates without proper analysis"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9,
+        "stddev": 0.1414,
+        "min": 0.8,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 3.0,
+        "stddev": 2.8284,
+        "min": 1.0,
+        "max": 5.0
+      },
+      "tokens": {
+        "mean": 100.0,
+        "stddev": 141.4214,
+        "min": 0,
+        "max": 200
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.5,
+        "stddev": 0.7071,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 5.5,
+        "stddev": 3.5355,
+        "min": 3.0,
+        "max": 8.0
+      },
+      "tokens": {
+        "mean": 550.0,
+        "stddev": 353.5534,
+        "min": 300,
+        "max": 800
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.40",
+      "time_seconds": "-2.5",
+      "tokens": "-450"
+    }
+  },
+  "notes": []
+}

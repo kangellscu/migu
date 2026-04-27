@@ -1,0 +1,17 @@
+{
+  "skill_name": "kb-archive",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我有一个关于刘邦和项羽领导风格对比的 report，请使用 kb-archive skill 生成 synthesis 报告，并执行所有回写建议（选择 yes）。",
+      "expected_output": "生成 synthesis 报告到 wiki/synthesis/ 目录，并更新刘邦、项羽、张良、范增等实体页面，添加领导风格、失败原因等章节",
+      "files": ["/Users/23mofang/Documents/knowledge-bases/migu/skills/minimal/kb-archive-workspace/iteration-1/test-report.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "请使用 kb-archive skill 生成 synthesis 报告。",
+      "expected_output": "提示用户：kb-archive 必须在 kb-query 执行后的同一 agent session 中运行，需要先运行 kb-query 生成 report",
+      "files": []
+    }
+  ]
+}

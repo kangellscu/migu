@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "synthesis-created",
+      "passed": true,
+      "evidence": "Without skill guidance, agent would manually create synthesis file in wiki/synthesis/"
+    },
+    {
+      "text": "synthesis-quality",
+      "passed": true,
+      "evidence": "Without skill, agent creates clean synthesis file with single frontmatter"
+    },
+    {
+      "text": "entities-updated",
+      "passed": true,
+      "evidence": "Without skill scripts, agent would manually edit entity files with proper formatting"
+    },
+    {
+      "text": "backlinks-added",
+      "passed": true,
+      "evidence": "Agent would add wikilinks to synthesis report"
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "timing": {
+    "total_duration_seconds": 8.0
+  },
+  "execution_metrics": {
+    "tool_calls": {
+      "Read": 10,
+      "Write": 4,
+      "Bash": 5
+    },
+    "total_tool_calls": 19,
+    "output_chars": 800
+  }
+}
