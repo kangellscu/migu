@@ -56,7 +56,7 @@ def main():
     if pending_ingest == 0 and pending_compile == 0:
         print()
         print("┌─────────────────────────────────────────────────┐")
-        print("│ Status                                            │")
+        print("│ Status                                         │")
         print("├─────────────────────────────────────────────────┤")
         print("│ All up to date                                    │")
         print("└─────────────────────────────────────────────────┘")
