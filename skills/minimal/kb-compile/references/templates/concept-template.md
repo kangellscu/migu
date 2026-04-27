@@ -1,5 +1,6 @@
 ---
 type: concept
+subtype: {{subtype}}
 ---
 # {{name}}
 

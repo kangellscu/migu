@@ -1,5 +1,6 @@
 ---
 type: entity
+subtype: {{subtype}}
 ---
 # {{name}}
 
