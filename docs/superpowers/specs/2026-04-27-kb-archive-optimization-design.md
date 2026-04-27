@@ -289,7 +289,19 @@ echo "## 决策特点
 
 ---
 
-## 8. 验收标准
+## 8. 实施原则
+
+### 8.1 使用 skill-creator skill
+
+实施优化时应使用 skill-creator skill 进行实际的优化工作，遵循 skill-creator 的评估流程：
+- 运行测试用例
+- 使用 eval-viewer 展示结果
+- 根据反馈迭代改进
+- 达到 Pass Rate 100%
+
+---
+
+## 9. 验收标准
 
 优化完成后应达到：
 
