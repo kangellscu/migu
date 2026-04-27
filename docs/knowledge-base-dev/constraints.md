@@ -90,7 +90,7 @@ These files are automatically maintained by skills. Do not edit them manually.
 **Contents**: Wiki document index
 
 **Management**:
-- Created by: migu init (initial template)
+- Created by: migu init (generates sections from structure.json)
 - Updated by: kb-compile (adds wiki page entries)
 - Updated by: kb-archive (adds synthesis entries)
 
