@@ -3,7 +3,7 @@ title: kb-archive Skill 优化设计
 created: 2026-04-27
 type: spec
 status: draft
-version: 1.0
+version: 1.1
 related_specs:
   - docs/superpowers/specs/2026-04-17-migu-scaffold-design.md
   - docs/superpowers/specs/2026-04-21-skills-implementation-guide.md
@@ -28,8 +28,8 @@ kb-archive skill 在实际测试评估中发现两类问题，影响 Pass Rate�
 
 | 问题 | 代码位置 | 影响 |
 |------|----------|------|
-| 重复 frontmatter | scripts/create_synthesis.py:17 | 文件格式不规范，包含双重 frontmatter |
-| 换行符未处理 | scripts/update_entity.py:27 | 实体页面添加的章节格式错误（`\n` 未转换） |
+| 重复 frontmatter | scripts/create_synthesis.py | 文件格式不规范，包含双重 frontmatter |
+| 换行符未处理 | scripts/update_entity.py | 实体页面添加的章节格式错误（`\n` 未转换） |
 
 ### 与 kb-compile 对比
 
@@ -66,56 +66,39 @@ kb-compile 在 iteration-3 测试时也发现类似问题，解决方案：
 
 ### 4.1 流程强化
 
-在现有执行流程步骤 7 后，添加强调：
+在现有执行流程步骤 7 后，新增两个步骤并强调必须执行：
 
-```markdown
-7. **根据选择执行**：
-   - 调用 `create_synthesis.py` 创建 synthesis 文件（不含回写建议）
-   - 调用 `update_entity.py` 有机融入 wiki 实体文档
-8. **更新 index.md**（根目录）：添加新页面索引到 synthesis section ⚠️ **必须执行**
-9. **更新 log.md**（根目录）：追加 archive 操作记录 ⚠️ **必须执行**
-```
+**新增步骤 8**：更新根目录 index.md，将新 synthesis 报告添加到 synthesis section，标记为必须执行。
+
+**新增步骤 9**：更新根目录 log.md，追加 archive 操作记录，标记为必须执行。
 
 ### 4.2 输出验证章节
 
-添加新章节：
+新增章节"输出验证"，要求完成后输出验证信息：
 
-```markdown
-## 输出验证
+**验证项**：
+- synthesis 文件创建状态（路径确认）
+- index.md 更新状态（synthesis section）
+- log.md 更新状态
+- 实体页面更新数量
 
-完成后必须输出以下验证信息：
-- ✓ synthesis 文件: wiki/synthesis/xxx.md (已创建)
-- ✓ index.md (已更新 - synthesis section)
-- ✓ log.md (已更新)
-- ✓ 实体更新: X 个实体页面 (已更新/无更新)
+**输出格式**：先输出处理结果摘要，再逐项验证，最后给出下一步提示。
 
-格式示例：
-```
-处理结果：生成 1 个 synthesis 报告，更新 4 个实体页面
-验证：✓ wiki/synthesis/楚汉战争关键人物决策分析.md 已创建
-      ✓ index.md synthesis section 已更新
-      ✓ log.md 已追加 archive 记录
-下一步提示：可运行 kb-status 查看知识库状态
-```
-```
+### 4.3 index.md 更新意图
 
-### 4.3 index.md 更新格式
+LLM agent 应在根目录 index.md 的 synthesis section 添加新条目：
 
-LLM agent 应在 index.md synthesis section 添加条目：
+**条目内容**：报告标题 wikilink + 简短摘要 + 更新日期。
 
-```markdown
-## synthesis
-<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
-- [[报告标题]] | 简短摘要 | 更新: 2026-04-27
-```
+**格式要求**：遵循现有 index.md entry 格式（wikilink + 摘要 + 日期）。
 
-### 4.4 log.md 更新格式
+### 4.4 log.md 更新意图
 
-LLM agent 应在 log.md 追加记录：
+LLM agent 应在根目录 log.md 追加 archive 操作记录：
 
-```markdown
-## [YYYY-MM-DD] archive | 生成 synthesis 报告（报告标题），更新 X 个实体页面（实体列表）
-```
+**记录内容**：日期 + archive 操作标识 + 生成的 synthesis 报告标题 + 更新的实体数量和列表。
+
+**格式要求**：遵循现有 log.md entry 格式（日期标记 + 操作类型 + 详情）。
 
 ---
 
@@ -125,81 +108,23 @@ LLM agent 应在 log.md 追加记录：
 
 **问题**：直接将 stdin 内容写入文件，导致重复 frontmatter（原始 report frontmatter + 新 synthesis frontmatter）。
 
-**解决方案**：添加 frontmatter 过滤逻辑。
+**修复意图**：
 
-**改动**：
+脚本应在写入前过滤输入内容中已存在的 YAML frontmatter（以 `---` 标记的段落），只保留正文内容，然后添加新的 synthesis frontmatter（包含 title、type、date 字段）。
 
-```python
-def strip_frontmatter(content: str) -> str:
-    """Remove existing frontmatter from content.
-    
-    Handles YAML frontmatter enclosed by --- markers.
-    Returns content without frontmatter section.
-    """
-    if content.strip().startswith("---"):
-        parts = content.split("---", 2)
-        if len(parts) >= 3:
-            return parts[2].strip()
-    return content.strip()
-
-def main(synthesis_dir: str, title: str):
-    out_dir = Path(synthesis_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    
-    content = sys.stdin.read()
-    clean_content = strip_frontmatter(content)
-    
-    date_str = datetime.now().strftime("%Y-%m-%d")
-    
-    output = f"---\ntitle: {title}\ntype: synthesis\ndate: {date_str}\n---\n\n{clean_content}\n"
-    
-    out_file = out_dir / f"{title}.md"
-    out_file.write_text(output, encoding="utf-8")
-    print(f"Created: {out_file}")
-```
+**预期结果**：生成的 synthesis 文件包含单一 frontmatter，无重复。
 
 ### 5.2 update_entity.py 改进
 
-**问题**：命令行参数中的 `\n` 字符未转换为实际换行符。
+**问题**：命令行参数传递内容时 `\n` 字符未转换为实际换行符。
 
-**解决方案**：改为 stdin 读取内容。
+**修复意图**：
 
-**改动**：
+脚本应改为从 stdin 读取要添加的内容，而非命令行参数。参数仅需实体文件路径。内容通过管道传入，确保换行符正确处理。
 
-```python
-def main(entity_path: str):
-    p = Path(entity_path)
-    if not p.exists():
-        print(f"ERROR: Entity file not found: {entity_path}", file=sys.stderr)
-        sys.exit(1)
-    
-    content = sys.stdin.read()
-    
-    existing = p.read_text(encoding="utf-8")
-    
-    if "## 来源" in existing:
-        parts = existing.split("## 来源", 1)
-        updated = parts[0].rstrip() + "\n\n" + content + "\n\n## 来源" + parts[1]
-    else:
-        updated = existing.rstrip() + "\n\n" + content + "\n"
-    
-    p.write_text(updated, encoding="utf-8")
-    print(f"Updated: {entity_path}")
+**内容插入位置**：在实体文件末尾的"来源"章节前插入新内容，如无"来源"章节则追加到文件末尾。
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: update_entity.py <entity_path>", file=sys.stderr)
-        print("Content should be provided via stdin", file=sys.stderr)
-        sys.exit(1)
-    main(sys.argv[1])
-```
-
-**使用方式**：
-
-```bash
-echo "## 决策特点
-刘邦善于用人决策..." | python update_entity.py wiki/entities/刘邦.md
-```
+**预期结果**：实体页面新章节格式正确，换行符正确转换。
 
 ---
 
@@ -207,69 +132,25 @@ echo "## 决策特点
 
 ### 6.1 评估检查项
 
-参照 kb-compile iteration-3，在 grading.json 添加：
+参照 kb-compile iteration-3，新增以下检查项：
 
-```json
-{
-  "expectations": [
-    {
-      "text": "synthesis-created",
-      "passed": true,
-      "evidence": "Created synthesis report in wiki/synthesis/"
-    },
-    {
-      "text": "synthesis-quality",
-      "passed": true,
-      "evidence": "Synthesis file has clean frontmatter, no duplication"
-    },
-    {
-      "text": "entities-updated",
-      "passed": true,
-      "evidence": "Entity pages updated with new sections"
-    },
-    {
-      "text": "updates-root-index-md",
-      "passed": true,
-      "evidence": "Root index.md synthesis section updated with new report entry"
-    },
-    {
-      "text": "updates-root-log-md",
-      "passed": true,
-      "evidence": "Root log.md updated with archive operation record"
-    }
-  ]
-}
-```
+| 检查项名称 | 检查内容 |
+|-----------|----------|
+| synthesis-created | synthesis 报告是否创建在 wiki/synthesis/ 目录 |
+| synthesis-quality | synthesis 文件是否包含单一 frontmatter（无重复） |
+| entities-updated | 实体页面是否更新，包含新章节 |
+| updates-root-index-md | 根目录 index.md synthesis section 是否包含新报告索引 |
+| updates-root-log-md | 根目录 log.md 是否包含 archive 操作记录 |
 
 ### 6.2 测试用例
 
-新增测试用例：
+新增测试用例覆盖以下场景：
 
-```json
-{
-  "skill_name": "kb-archive",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "有 report 时执行 kb-archive，验证 synthesis 创建和实体更新",
-      "expected_output": "synthesis 创建成功，实体页面更新，格式正确",
-      "files": ["test-report.md"]
-    },
-    {
-      "id": 2,
-      "prompt": "无 report 时执行 kb-archive",
-      "expected_output": "提示 report 不存在，终止执行，无文件创建",
-      "files": []
-    },
-    {
-      "id": 3,
-      "prompt": "执行 kb-archive 后验证 index.md 和 log.md 更新",
-      "expected_output": "index.md synthesis section 包含新报告索引，log.md 包含 archive 记录",
-      "files": ["test-report.md"]
-    }
-  ]
-}
-```
+| 测试场景 | 输入 | 预期输出 |
+|---------|------|---------|
+| 有 report 执行 archive | test-report.md | synthesis 创建、实体更新、格式正确 |
+| 无 report 执行 archive | 无 | 提示 report 不存在、终止执行、无文件创建 |
+| 验证 index.md/log.md 更新 | test-report.md | index.md synthesis section 包含索引、log.md 包含记录 |
 
 ---
 
