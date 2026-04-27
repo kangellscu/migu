@@ -54,7 +54,7 @@ rules/legal/
     └── index.md    # (Optional) Customized index format
 ```
 
-### Skills.Json Format
+### skills.json Format
 
 ```json
 {
@@ -95,7 +95,7 @@ Each skill contains:
 skills/minimal/kb-validate/
 ├── SKILL.md        # Agent instructions for validation
 ├── scripts/
-│   └ validate.py   # Validation script
+│   └── validate.py # Validation script
 └── references/
     └── rules.md    # Validation rules
 ```
