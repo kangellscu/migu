@@ -57,6 +57,33 @@ templates 约束 wiki 页面格式，不约束提取范围。
 | read_file.py | 根据路径读取文件 | 步骤 2：读取待编译文件内容 | 必须 |
 | update_registry.py | 更新 raw-registry.md | 步骤 7：更新编译状态 | 必须 |
 
+## 验证规范
+
+wiki 文档生成后需验证以下内容：
+
+### frontmatter 验证
+
+| 字段 | 必填 | 格式 | 示例 |
+|------|------|------|------|
+| type | ✓ | entity \| concept | `type: entity` |
+| subtype | ✓ | 预定义或自定义 | `subtype: person` |
+| date | ✓ | YYYY-MM-DD | `date: 2026-04-27` |
+| source | ✓ | wikilink | `source: [[raw/path/file.md]]` |
+
+### 结构验证
+
+- wiki 页面 sections 符合 templates 定义
+- 实体页面包含：基本信息、描述、关系、来源
+- 概念页面包含：定义、特征、相关概念、来源
+
+### 格式验证
+
+- wikilink 使用 `[[页面名]]` 格式
+- source 字段使用 `[[raw/path/file.md]]` 格式
+- 关系列表使用 `- [[实体名]]` 格式
+
+验证失败时输出告警，建议运行 kb-lint 详细检查。
+
 ## 输出摘要
 
 完成后输出：

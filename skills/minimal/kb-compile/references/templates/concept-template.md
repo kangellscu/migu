@@ -1,6 +1,7 @@
 ---
 type: concept
 subtype: {{subtype}}
+date: {{date}}
 ---
 # {{name}}
 

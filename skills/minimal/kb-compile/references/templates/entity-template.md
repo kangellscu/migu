@@ -1,6 +1,7 @@
 ---
 type: entity
 subtype: {{subtype}}
+date: {{date}}
 ---
 # {{name}}
 
