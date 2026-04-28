@@ -85,7 +85,7 @@ migu is a CLI scaffolder for creating LLM-WIKI knowledge bases. It provides:
 
 | Command | Description |
 |---------|-------------|
-| `migu init <dir> [--rules <name>]` | Create knowledge base with specified rules |
+| `migu init <dir> [--rules <name>]` | Create knowledge base (default rules: minimal) |
 | `migu skill list <dir>` | List installed skills and versions |
 | `migu skill install <name> <dir>` | Install skill to knowledge base |
 | `migu skill uninstall <name> <dir>` | Remove skill from knowledge base |
