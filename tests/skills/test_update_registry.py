@@ -90,7 +90,7 @@ def test_update_existing_entry():
         
         initial_content = REGISTRY_TEMPLATE.replace(
             "|------|------|------|-----------|---------|---------|-------------|------------------|",
-            "|------|------|------|-----------|---------|---------|-------------|------------------|\n| 史记/本纪/秦本纪.md | markdown | | 待处理 | - | - | - | - |"
+            "|------|------|------|-----------|---------|---------|-------------|------------------|\n| [[raw/史记/本纪/秦本纪.md]] | markdown | | 待处理 | [[raw/.extracted/史记/本纪/秦本纪.md]] | - | - | - |"
         )
         registry_file.write_text(initial_content, encoding='utf-8')
         
@@ -109,13 +109,50 @@ def test_update_existing_entry():
         assert result.returncode == 0
         
         content = registry_file.read_text(encoding='utf-8')
+        assert "[[" not in content  # wikilink should be removed
         lines = content.split('\n')
         for line in lines:
             if "秦本纪.md" in line:
                 parts = [p.strip() for p in line.split('|')]
+                assert parts[1] == "史记/本纪/秦本纪.md"  # File: string path
                 assert parts[4] == "已处理"
-                assert parts[5] == ".extracted/史记/本纪/秦本纪.md"
+                assert parts[5] == ".extracted/史记/本纪/秦本纪.md"  # Product Path: string path
                 assert len(parts[7]) == 10  # Date format YYYY-MM-DD
+
+
+def test_replace_wikilink_entry():
+    """wikilink 格式条目被替换为 string path 格式。"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        kb_dir = Path(tmpdir)
+        registry_file = kb_dir / "raw-registry.md"
+        
+        initial_content = REGISTRY_TEMPLATE.replace(
+            "|------|------|------|-----------|---------|---------|-------------|------------------|",
+            "|------|------|------|-----------|---------|---------|-------------|------------------|\n| [[raw/test.md]] | markdown | | 待处理 | - | - | - | - |"
+        )
+        registry_file.write_text(initial_content, encoding='utf-8')
+        
+        result = subprocess.run(
+            ["python", "skills/minimal/kb-ingest/scripts/update_registry.py",
+             str(kb_dir),
+             "--file", "test.md",
+             "--type", "markdown",
+             "--status", "skipped"],
+            capture_output=True,
+            text=True,
+            cwd="/Users/23mofang/Documents/knowledge-bases/migu"
+        )
+        
+        assert result.returncode == 0
+        
+        content = registry_file.read_text(encoding='utf-8')
+        assert "[[" not in content
+        assert "test.md" in content
+        lines = content.split('\n')
+        for line in lines:
+            if "test.md" in line:
+                parts = [p.strip() for p in line.split('|')]
+                assert parts[1] == "test.md"
 
 
 def test_batch_mode():

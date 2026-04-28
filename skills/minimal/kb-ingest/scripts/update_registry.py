@@ -9,9 +9,25 @@ Or batch mode via stdin JSON:
 """
 
 import json
+import re
 import sys
 from datetime import date
 from pathlib import Path
+
+
+def normalize_path(path: str) -> str:
+    """Remove wikilink format and extract clean path.
+    
+    Examples:
+        "[[raw/史记/本纪/秦本纪.md]]" -> "史记/本纪/秦本纪.md"
+        "[[raw/.extracted/史记/本纪/秦本纪.md]]" -> ".extracted/史记/本纪/秦本纪.md"
+        "史记/本纪/秦本纪.md" -> "史记/本纪/秦本纪.md"
+    """
+    if path.startswith('[[') and path.endswith(']]'):
+        path = path[2:-2]
+        if path.startswith('raw/'):
+            path = path[4:]
+    return path
 
 
 def parse_registry(content: str) -> tuple[list[str], list[dict]]:
@@ -70,7 +86,8 @@ def update_registry(kb_dir: Path, file_path: str, file_type: str,
     
     found = False
     for entry in entries:
-        if entry['file'] == file_path:
+        if normalize_path(entry['file']) == file_path:
+            entry['file'] = file_path
             entry['type'] = file_type
             entry['preprocess_status'] = '已处理' if status == 'processed' else '无需处理'
             entry['product_path'] = output_path if output_path else '-'
