@@ -4,20 +4,60 @@ CLI scaffolder for LLM-WIKI knowledge bases.
 
 ## Installation
 
-Install with uv or pipx:
+Clone the repository and install locally:
 
 ```bash
-# uv (recommended)
-uv tool install migu
+# Clone
+git clone <repo-url> migu
+cd migu
 
-# pipx
-pipx install migu
+# Install with uv (recommended)
+uv tool install .
+
+# Or with pipx
+pipx install .
 ```
 
 Verify installation:
 
 ```bash
 migu --version
+```
+
+**Development mode** (run without installation):
+
+```bash
+cd migu
+uv run migu init my-kb
+```
+
+## AI Agent Installation
+
+If you're using migu in an AI agent session (opencode, trae, etc.), follow these steps:
+
+**Step 1: Choose installation directory**
+
+Decide where to install migu (e.g., `~/tools/migu` or `/tmp/migu`).
+
+**Step 2: Clone and install**
+
+```bash
+git clone <repo-url> ~/tools/migu
+cd ~/tools/migu
+uv tool install .
+```
+
+**Step 3: Verify**
+
+```bash
+migu --version
+```
+
+**If you already have a migu repository** open in your agent session:
+
+```bash
+cd <migu-repo-path>
+uv tool install .
 ```
 
 ## Quick Start
