@@ -90,7 +90,7 @@ migu is a CLI scaffolder for creating LLM-WIKI knowledge bases. It provides:
 | `migu skill install <name> <dir>` | Install skill to knowledge base |
 | `migu skill uninstall <name> <dir>` | Remove skill from knowledge base |
 | `migu skill reinstall <name> <dir>` | Reinstall skill (update or restore) |
-| `migu rules list <dir>` | Check rules configuration versions |
+| `migu rules list <dir>` | Check rules configuration versions *(未实现)* |
 | `migu --version` | Show version |
 | `migu --help` | Show help |
 

@@ -163,9 +163,11 @@ migu skill reinstall kb-ingest my-kb
 
 ## migu rules
 
+> **注意**: 此命令尚未实现。
+
 Check rules configuration versions.
 
-### migu rules list
+### migu rules list *(未实现)*
 
 List rules configuration files and version status.
 
