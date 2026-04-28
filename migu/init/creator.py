@@ -7,6 +7,56 @@ from pathlib import Path
 from migu.init.rules import load_structure, load_skills, resolve_rules
 
 
+def _resolve_template_file(filename: str, rules_name: str) -> Path:
+    """Resolve template file with inheritance fallback.
+    
+    Args:
+        filename: Template filename (e.g., 'index.md', 'kb-README.md')
+        rules_name: Rules name (e.g., 'minimal', 'history')
+        
+    Returns:
+        Path to template file
+        
+    Raises:
+        ValueError: If template not found in rules or minimal
+    """
+    rules_dir = resolve_rules(rules_name)
+    rules_template = rules_dir / "templates" / filename
+    
+    if rules_template.exists():
+        return rules_template
+    
+    # Fallback to minimal
+    minimal_dir = resolve_rules("minimal")
+    minimal_template = minimal_dir / "templates" / filename
+    
+    if minimal_template.exists():
+        return minimal_template
+    
+    raise ValueError(
+        f"Template '{filename}' not found in {rules_name} or minimal templates"
+    )
+
+
+def _generate_index_sections(structure: dict) -> str:
+    """Generate index.md sections from structure.json wiki directories.
+    
+    Args:
+        structure: Dictionary from structure.json
+        
+    Returns:
+        Sections content string
+    """
+    wiki_dirs = structure.get("directories", {}).get("wiki", {})
+    sections = []
+    
+    for section_name in wiki_dirs.keys():
+        sections.append(f"\n## {section_name}")
+        sections.append("<!-- entry: - [[Page Name]] | brief summary | updated: YYYY-MM-DD -->")
+    
+    return "\n".join(sections)
+
+
 def ensure_directories(base_path: Path, structure: dict) -> None:
     """Create directory structure from structure.json definition.
     
@@ -90,61 +140,39 @@ def _create_skills(target_path: Path, skills: dict, rules_name: str) -> None:
 
 
 def _create_template_files(target_path: Path, rules_name: str) -> None:
-    """Create initial knowledge base files."""
-    # index.md template
-    index_content = """---
-version: "1.0"
----
-# Wiki Index
-
-<!-- 
-entry format: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD
-sections correspond to structure.json wiki directory structure
--->
-
-## entities
-<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
-
-## concepts
-<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
-
-## synthesis
-<!-- entry: - [[文档名]] | brief摘要 | 更新: YYYY-MM-DD -->
-"""
-    (target_path / "index.md").write_text(index_content)
+    """Create initial knowledge base files from templates.
     
-    # log.md template
-    log_content = """---
-version: "1.0"
----
-# Knowledge Base Log
-
-<!-- 
-entry format: ## [YYYY-MM-DD] operation | details
-operation: ingest | compile | archive | lint
-query and status not recorded
--->
-
-<!-- Operation log appended by kb-ingest/compile/archive/lint -->
-"""
-    (target_path / "log.md").write_text(log_content)
+    Copies templates from rules/*/templates/ to knowledge base root.
+    Implements inheritance: fallback to minimal if rules has no templates.
+    Dynamically generates index.md sections from structure.json.
+    """
+    # Load structure for index.md dynamic generation
+    structure = load_structure(rules_name)
     
-    # raw-registry.md template
-    registry_content = """---
-version: "1.0"
----
-# Raw File Registry
-
-<!-- 
-entry format: | 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编译状态 | 最近处理日期 |
--->
-
-| 文件 | 类型 | 摘要 | 预处理状态 | 产物路径 | 编译状态 | 最近处理日期 |
-|------|------|------|-----------|---------|---------|-------------|
-"""
-    (target_path / "raw-registry.md").write_text(registry_content)
+    # Get list of template files from minimal (base templates)
+    minimal_dir = resolve_rules("minimal")
+    minimal_templates_dir = minimal_dir / "templates"
     
-    # AGENTS.md from rules, fallback to minimal if not found
+    if not minimal_templates_dir.exists():
+        raise ValueError("minimal templates directory not found")
+    
+    template_files = [f.name for f in minimal_templates_dir.iterdir() if f.is_file()]
+    
+    # Copy each template file
+    for filename in template_files:
+        # Resolve template with inheritance
+        template_source = _resolve_template_file(filename, rules_name)
+        template_content = template_source.read_text()
+        
+        # Special handling for index.md: add dynamic sections
+        if filename == "index.md":
+            sections_content = _generate_index_sections(structure)
+            template_content = template_content + sections_content
+        
+        # Write to knowledge base root
+        (target_path / filename).write_text(template_content)
+    
+    # Copy AGENTS.md (not in templates/, separate inheritance logic)
     rules_dir = resolve_rules(rules_name)
     agents_source = rules_dir / "AGENTS.md"
     if not agents_source.exists():
