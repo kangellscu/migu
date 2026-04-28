@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from migu import __version__
 from migu.init.rules import load_structure, load_skills, resolve_rules
 
 
@@ -126,7 +127,7 @@ def _create_skills(target_path: Path, skills: dict, rules_name: str) -> None:
     lock_data = {
         "rules": rules_name,
         "installed_at": datetime.now().isoformat(),
-        "migu_version": "0.1.0",
+        "migu_version": __version__,
         "skills": [],
     }
     
