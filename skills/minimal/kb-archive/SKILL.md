@@ -11,6 +11,16 @@ metadata:
 
 接收 report + 回写摘要 + 有机融入。
 
+## 职责边界
+
+kb-archive 是唯一执行回写操作的 skill：
+- ✓ 创建 synthesis 报告（wiki/synthesis/）
+- ✓ 更新 index.md（添加 synthesis 索引）
+- ✓ 更新 log.md（记录 archive 操作）
+- ✓ 回写 wiki 实体页面
+
+kb-query 只生成 report，不执行任何写操作。
+
 ## 会话依赖
 
 kb-archive 必须在 kb-query 执行后的同一 agent session 中执行。

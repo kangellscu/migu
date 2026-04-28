@@ -21,4 +21,5 @@ type: query-report
 [[entity1]], [[entity2]], ...
 
 ## 回写建议
+<!-- 注意：以下建议仅供 kb-archive 使用，kb-query 不执行回写操作 -->
 - 补充 [[entity]]：内容描述（来源：wiki/entities/xxx.md 或 raw/xxx.md）

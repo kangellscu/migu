@@ -35,6 +35,19 @@ Wiki 查询 + 回溯模式 + 生成 report。
 | wiki 无相关实体 | "未找到相关实体，建议检查 raw 是否已 compile" |
 | 回溯无新发现 | "raw 回溯完成，无新发现信息" |
 
+## 禁止操作
+
+kb-query 是只读操作，禁止执行以下写操作：
+
+| 禁止操作 | 说明 |
+|---------|------|
+| 创建 wiki/synthesis/ 文件 | synthesis 由 kb-archive 创建 |
+| 更新 index.md | 只有 kb-compile 和 kb-archive 更新 |
+| 更新 log.md | query 不记录（见 rules/minimal/templates/log.md:9） |
+| 更新 wiki 实体页面 | 回写由 kb-archive 执行 |
+
+kb-query 只生成 report，供 kb-archive 使用。
+
 ## scripts 使用说明
 
 | script | 用途 | 调用时机 | 依赖类型 |
