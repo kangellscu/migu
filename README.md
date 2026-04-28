@@ -8,7 +8,7 @@ Clone the repository and install locally:
 
 ```bash
 # Clone
-git clone git@github.com:kangellscu/migu.git migu
+git clone https://github.com/kangellscu/migu.git migu
 cd migu
 
 # Install with uv (recommended)
@@ -42,7 +42,7 @@ Decide where to install migu (e.g., `~/tools/migu` or `/tmp/migu`).
 **Step 2: Clone and install**
 
 ```bash
-git clone git@github.com:kangellscu/migu.git ~/tools/migu
+git clone https://github.com/kangellscu/migu.git ~/tools/migu
 cd ~/tools/migu
 uv tool install .
 ```
