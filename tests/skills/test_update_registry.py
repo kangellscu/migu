@@ -49,7 +49,7 @@ def test_add_processed_entry():
         
         content = registry_file.read_text(encoding='utf-8')
         assert "[[raw/史记/本纪/秦本纪.md]]" in content  # File: wikilink
-        assert ".extracted/史记/本纪/秦本纪.md" in content  # Product Path: string
+        assert "raw/.extracted/史记/本纪/秦本纪.md" in content  # Product Path: with raw/ prefix
 
 
 def test_add_skipped_entry():
@@ -115,7 +115,7 @@ def test_update_existing_entry():
                 parts = [p.strip() for p in line.split('|')]
                 assert parts[1] == "[[raw/史记/本纪/秦本纪.md]]"  # File: wikilink
                 assert parts[4] == "已处理"
-                assert parts[5] == ".extracted/史记/本纪/秦本纪.md"  # Product Path: string (no wikilink)
+                assert parts[5] == "raw/.extracted/史记/本纪/秦本纪.md"  # Product Path: with raw/ prefix
                 assert len(parts[7]) == 10  # Date format YYYY-MM-DD
 
 
@@ -145,4 +145,4 @@ def test_batch_mode():
         content = registry_file.read_text(encoding='utf-8')
         assert "[[raw/test1.md]]" in content  # File: wikilink
         assert "[[raw/test2.md]]" in content  # File: wikilink
-        assert ".extracted/test1.md" in content  # Product Path: string
+        assert "raw/.extracted/test1.md" in content  # Product Path: with raw/ prefix

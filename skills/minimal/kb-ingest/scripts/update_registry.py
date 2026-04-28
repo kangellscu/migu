@@ -78,13 +78,17 @@ def format_entry(entry: dict) -> str:
     """Format entry as table row.
     
     File: wikilink format [[raw/<path>]]
-    Product Path: string path (no wikilink)
+    Product Path: string path with raw/ prefix (e.g., raw/.extracted/<path>)
     """
     file_field = entry['file']
     if not file_field.startswith('[['):
         file_field = to_wikilink(file_field)
     
-    return f"| {file_field} | {entry['type']} | {entry['summary']} | {entry['preprocess_status']} | {entry['product_path']} | {entry['compile_status']} | {entry['last_processed']} | {entry['remaining_omissions']} |"
+    product_path = entry['product_path']
+    if product_path.startswith('.extracted/'):
+        product_path = f"raw/{product_path}"
+    
+    return f"| {file_field} | {entry['type']} | {entry['summary']} | {entry['preprocess_status']} | {product_path} | {entry['compile_status']} | {entry['last_processed']} | {entry['remaining_omissions']} |"
 
 
 def update_registry(kb_dir: Path, file_path: str, file_type: str, 
