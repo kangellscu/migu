@@ -62,3 +62,40 @@ def test_templates_frontmatter_preserved():
         index_content = (kb_path / "index.md").read_text()
         assert "---" in index_content
         assert "version:" in index_content
+
+
+def test_kb_readme_standalone_copying():
+    """Test kb-README.md copied from rules/ root (not templates/)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        kb_path = Path(tmpdir) / "test-kb"
+        
+        create_kb(str(kb_path), "minimal")
+        
+        # Check README.md exists (copied from kb-README.md)
+        assert (kb_path / "README.md").exists()
+        
+        # Check README.md content matches kb-README.md
+        readme_content = (kb_path / "README.md").read_text()
+        kb_readme_path = Path(__file__).parent.parent / "rules" / "minimal" / "kb-README.md"
+        kb_readme_content = kb_readme_path.read_text()
+        
+        # README.md should have kb-README.md content (frontmatter + sections)
+        assert kb_readme_content in readme_content
+
+
+def test_kb_readme_inheritance():
+    """Test kb-README.md inheritance (history inherits minimal)."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        kb_path = Path(tmpdir) / "test-history"
+        
+        create_kb(str(kb_path), "history")
+        
+        # Check README.md exists (inherited from minimal kb-README.md)
+        assert (kb_path / "README.md").exists()
+        
+        # Check README.md content matches minimal kb-README.md
+        readme_content = (kb_path / "README.md").read_text()
+        kb_readme_path = Path(__file__).parent.parent / "rules" / "minimal" / "kb-README.md"
+        kb_readme_content = kb_readme_path.read_text()
+        
+        assert kb_readme_content in readme_content
