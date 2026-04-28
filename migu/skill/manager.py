@@ -3,7 +3,17 @@
 import json
 from pathlib import Path
 
-SKILLS_ROOT = Path(__file__).parent.parent.parent / "skills"
+
+def _get_data_root(name: str) -> Path:
+    bundled = Path(__file__).parent.parent / name
+    if bundled.exists():
+        return bundled
+    dev = Path(__file__).parent.parent.parent / name
+    if dev.exists():
+        return dev
+    raise FileNotFoundError(f"Cannot locate {name} directory")
+
+SKILLS_ROOT = _get_data_root("skills")
 
 
 def load_skills_lock(target_dir: Path) -> dict:
