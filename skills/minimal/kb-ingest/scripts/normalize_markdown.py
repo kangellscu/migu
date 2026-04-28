@@ -1,5 +1,12 @@
-"""Normalize markdown file (encoding fix, CJK radicals conversion)."""
+"""Normalize markdown file (encoding fix, CJK radicals conversion).
 
+Returns JSON status:
+- status: "processed" or "skipped"
+- output_path: path to extracted file (if processed) or null (if skipped)
+- issues: list of detected issue types (e.g., ["bom"], ["radicals"])
+"""
+
+import json
 import sys
 from pathlib import Path
 
@@ -133,28 +140,52 @@ def convert_cjk_radicals(text: str) -> str:
     """Convert CJK radicals and Kangxi radicals to equivalent unified ideographs."""
     return ''.join(_CJK_RADICALS_TO_UNICODE.get(c, c) for c in text)
 
-def main(input_file: str, output_file: str):
+
+def main(input_file: str, output_dir: str):
     src = Path(input_file)
-    dst = Path(output_file)
-    dst.parent.mkdir(parents=True, exist_ok=True)
-
+    raw_dir = Path(output_dir)
+    
     content = src.read_text(encoding="utf-8")
-    content = convert_cjk_radicals(content)
-    needs_fix = False
-
+    original = content
+    issues = []
+    
     if content.startswith('\ufeff'):
         content = content[1:]
-        needs_fix = True
-
-    dst.write_text(content, encoding="utf-8")
-
+        issues.append("bom")
+    
+    converted = convert_cjk_radicals(content)
+    if converted != content:
+        issues.append("radicals")
+        content = converted
+    
+    needs_fix = len(issues) > 0
+    
     if needs_fix:
-        print(f"FIXED: {input_file} -> {output_file}")
+        extracted_dir = raw_dir / ".extracted"
+        rel_path = src.relative_to(raw_dir)
+        dst = extracted_dir / rel_path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_text(content, encoding="utf-8")
+        
+        result = {
+            "status": "processed",
+            "output_path": f".extracted/{rel_path}",
+            "issues": issues
+        }
+        print(f"FIXED: {input_file} -> {dst}", file=sys.stderr)
     else:
-        print(f"OK: {input_file}")
+        result = {
+            "status": "skipped",
+            "output_path": None,
+            "issues": []
+        }
+        print(f"OK: {input_file}", file=sys.stderr)
+    
+    print(json.dumps(result))
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: normalize_markdown.py <input> <output>", file=sys.stderr)
+        print("Usage: normalize_markdown.py <input_file> <raw_dir>", file=sys.stderr)
         sys.exit(1)
     main(sys.argv[1], sys.argv[2])

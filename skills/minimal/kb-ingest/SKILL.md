@@ -15,7 +15,7 @@ version: 1.0
 1. **扫描 raw/ 目录**：调用 `scan_raw.py` 检测所有文件（递归，排除 .extracted/）
 2. **对比 raw-registry.md**：找出未记录的文件，准备添加新条目
 3. **处理文件**：
-   - **markdown**：调用 `normalize_markdown.py` 检查编码、转换 CJK 部首，输出到 raw/.extracted/（如有修复）
+   - **markdown**：调用 `normalize_markdown.py` 检查 BOM 和康熙部首/CJK 部首。有修复时输出到 `raw/.extracted/`，返回 JSON 状态（status、output_path、issues）；无修复时不输出，返回 status: skipped。
    - **PDF**：调用 `convert_pdf.py` 转换为 markdown，输出到 raw/.extracted/
    - **image**：无需处理，直接引用
 4. **验证**：调用 `validate_batch.py` 检查 raw-registry.md 格式
@@ -43,15 +43,30 @@ version: 1.0
 
 ## scripts 使用说明
 
-| script | 用途 | 调用时机 | 参数 | 依赖类型 |
-|--------|------|---------|------|---------|
-| scan_raw.py | 扫描 raw/ 目录，检测新文件 | 步骤 1：检测新文件 | <kb_dir> | 必须 |
-| validate_batch.py | 验证 raw-registry.md 格式 | 步骤 4：验证格式 | - | 必须 |
-| normalize_markdown.py | 规范化 markdown 文件 | 步骤 3：处理 markdown | - | 必须 |
-| convert_pdf.py | 转换 PDF 为 markdown | 步骤 3：处理 PDF | - | 必须 |
+| script | 用途 | 调用时机 | 参数 | 依赖类型 | 返回值 |
+|--------|------|---------|------|---------|--------|
+| scan_raw.py | 扫描 raw/ 目录，检测新文件 | 步骤 1：检测新文件 | <kb_dir> | 必须 | stdout: 文件路径|类型 |
+| validate_batch.py | 验证 raw-registry.md 格式 | 步骤 4：验证格式 | - | 必须 | 无 |
+| normalize_markdown.py | 规范化 markdown 文件 | 步骤 3：处理 markdown | <input_file> <raw_dir> | 必须 | stdout: JSON 状态，stderr: 日志 |
+| convert_pdf.py | 转换 PDF 为 markdown | 步骤 3：处理 PDF | - | 必须 | 无 |
 
 依赖类型说明：
 - 必须：流程步骤明确依赖该 script
+
+## normalize_markdown.py 返回值格式
+
+stdout 输出 JSON：
+```json
+{
+  "status": "processed" | "skipped",
+  "output_path": ".extracted/path/to/file.md" | null,
+  "issues": ["bom"] | ["radicals"] | ["bom", "radicals"] | []
+}
+```
+
+stderr 输出日志：
+- 有修复：`FIXED: <input> -> <output>`
+- 无修复：`OK: <input>`
 
 ## 输出摘要
 
