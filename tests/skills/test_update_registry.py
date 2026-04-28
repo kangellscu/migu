@@ -27,7 +27,7 @@ entry format: | File | Type | Summary | Preprocess Status | Product Path | Compi
 
 
 def test_add_processed_entry():
-    """新增 processed 条目，使用 string path 格式。"""
+    """新增 processed 条目，File 使用 wikilink，Product Path 使用 string path。"""
     with tempfile.TemporaryDirectory() as tmpdir:
         kb_dir = Path(tmpdir)
         registry_file = kb_dir / "raw-registry.md"
@@ -48,13 +48,12 @@ def test_add_processed_entry():
         assert result.returncode == 0
         
         content = registry_file.read_text(encoding='utf-8')
-        assert "史记/本纪/秦本纪.md" in content
-        assert ".extracted/史记/本纪/秦本纪.md" in content
-        assert "[[" not in content  # 无 wikilink
+        assert "[[raw/史记/本纪/秦本纪.md]]" in content  # File: wikilink
+        assert ".extracted/史记/本纪/秦本纪.md" in content  # Product Path: string
 
 
 def test_add_skipped_entry():
-    """新增 skipped 条目，Product Path 为 `-`。"""
+    """新增 skipped 条目，File 使用 wikilink，Product Path 为 `-`。"""
     with tempfile.TemporaryDirectory() as tmpdir:
         kb_dir = Path(tmpdir)
         registry_file = kb_dir / "raw-registry.md"
@@ -74,16 +73,16 @@ def test_add_skipped_entry():
         assert result.returncode == 0
         
         content = registry_file.read_text(encoding='utf-8')
-        assert "史记/本纪/高祖本纪.md" in content
+        assert "[[raw/史记/本纪/高祖本纪.md]]" in content  # File: wikilink
         lines = content.split('\n')
         for line in lines:
             if "高祖本纪.md" in line:
                 parts = [p.strip() for p in line.split('|')]
-                assert parts[5] == "-"  # Product Path
+                assert parts[5] == "-"  # Product Path: string
 
 
 def test_update_existing_entry():
-    """更新已有条目，状态和日期更新。"""
+    """更新已有条目，File 保持 wikilink，Product Path 更新为 string path。"""
     with tempfile.TemporaryDirectory() as tmpdir:
         kb_dir = Path(tmpdir)
         registry_file = kb_dir / "raw-registry.md"
@@ -109,54 +108,19 @@ def test_update_existing_entry():
         assert result.returncode == 0
         
         content = registry_file.read_text(encoding='utf-8')
-        assert "[[" not in content  # wikilink should be removed
+        assert "[[raw/史记/本纪/秦本纪.md]]" in content  # File: wikilink kept
         lines = content.split('\n')
         for line in lines:
-            if "秦本纪.md" in line:
+            if "秦本纪.md" in line and line.startswith('|'):
                 parts = [p.strip() for p in line.split('|')]
-                assert parts[1] == "史记/本纪/秦本纪.md"  # File: string path
+                assert parts[1] == "[[raw/史记/本纪/秦本纪.md]]"  # File: wikilink
                 assert parts[4] == "已处理"
-                assert parts[5] == ".extracted/史记/本纪/秦本纪.md"  # Product Path: string path
+                assert parts[5] == ".extracted/史记/本纪/秦本纪.md"  # Product Path: string (no wikilink)
                 assert len(parts[7]) == 10  # Date format YYYY-MM-DD
 
 
-def test_replace_wikilink_entry():
-    """wikilink 格式条目被替换为 string path 格式。"""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        kb_dir = Path(tmpdir)
-        registry_file = kb_dir / "raw-registry.md"
-        
-        initial_content = REGISTRY_TEMPLATE.replace(
-            "|------|------|------|-----------|---------|---------|-------------|------------------|",
-            "|------|------|------|-----------|---------|---------|-------------|------------------|\n| [[raw/test.md]] | markdown | | 待处理 | - | - | - | - |"
-        )
-        registry_file.write_text(initial_content, encoding='utf-8')
-        
-        result = subprocess.run(
-            ["python", "skills/minimal/kb-ingest/scripts/update_registry.py",
-             str(kb_dir),
-             "--file", "test.md",
-             "--type", "markdown",
-             "--status", "skipped"],
-            capture_output=True,
-            text=True,
-            cwd="/Users/23mofang/Documents/knowledge-bases/migu"
-        )
-        
-        assert result.returncode == 0
-        
-        content = registry_file.read_text(encoding='utf-8')
-        assert "[[" not in content
-        assert "test.md" in content
-        lines = content.split('\n')
-        for line in lines:
-            if "test.md" in line:
-                parts = [p.strip() for p in line.split('|')]
-                assert parts[1] == "test.md"
-
-
 def test_batch_mode():
-    """批量模式，从 stdin 读取 JSON。"""
+    """批量模式，File 使用 wikilink，Product Path 使用 string path。"""
     with tempfile.TemporaryDirectory() as tmpdir:
         kb_dir = Path(tmpdir)
         registry_file = kb_dir / "raw-registry.md"
@@ -179,6 +143,6 @@ def test_batch_mode():
         assert result.returncode == 0
         
         content = registry_file.read_text(encoding='utf-8')
-        assert "test1.md" in content
-        assert "test2.md" in content
-        assert "[[" not in content
+        assert "[[raw/test1.md]]" in content  # File: wikilink
+        assert "[[raw/test2.md]]" in content  # File: wikilink
+        assert ".extracted/test1.md" in content  # Product Path: string

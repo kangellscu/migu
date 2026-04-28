@@ -66,16 +66,17 @@ stderr 输出日志：
 
 ## raw-registry.md 格式约定
 
-**使用 string path 格式，不使用 wikilink**：
-
 | 字段 | 格式 | 示例 |
 |------|------|------|
-| File | 相对路径（无 `[[]]`） | `史记/本纪/秦本纪.md` |
-| Product Path | 相对路径（无 `[[]]`）或 `-` | `.extracted/史记/本纪/秦本纪.md` 或 `-` |
+| File | wikilink `[[raw/<path>]]` | `[[raw/史记/本纪/秦本纪.md]]` |
+| Product Path | string path（无 `[[]]`）或 `-` | `.extracted/史记/本纪/秦本纪.md` 或 `-` |
 
-**错误示例**（不要使用）：
-- `[[raw/史记/本纪/秦本纪.md]]`
-- `[[raw/.extracted/史记/本纪/秦本纪.md]]`
+**说明**：
+- File 使用 wikilink：便于 Obsidian 点击跳转到源文件
+- Product Path 使用 string path：便于 agent 解析和处理
+
+**错误示例**（Product Path 不要使用 wikilink）：
+- `[[raw/.extracted/史记/本纪/秦本纪.md]]` ❌
 
 ## 输出摘要
 

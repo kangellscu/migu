@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 def normalize_path(path: str) -> str:
-    """Remove wikilink format and extract clean path.
+    """Remove wikilink format and extract clean path for comparison.
     
     Examples:
         "[[raw/史记/本纪/秦本纪.md]]" -> "史记/本纪/秦本纪.md"
@@ -28,6 +28,15 @@ def normalize_path(path: str) -> str:
         if path.startswith('raw/'):
             path = path[4:]
     return path
+
+
+def to_wikilink(path: str) -> str:
+    """Convert path to wikilink format for File field.
+    
+    Examples:
+        "史记/本纪/秦本纪.md" -> "[[raw/史记/本纪/秦本纪.md]]"
+    """
+    return f"[[raw/{path}]]"
 
 
 def parse_registry(content: str) -> tuple[list[str], list[dict]]:
@@ -66,8 +75,16 @@ def parse_registry(content: str) -> tuple[list[str], list[dict]]:
 
 
 def format_entry(entry: dict) -> str:
-    """Format entry as table row."""
-    return f"| {entry['file']} | {entry['type']} | {entry['summary']} | {entry['preprocess_status']} | {entry['product_path']} | {entry['compile_status']} | {entry['last_processed']} | {entry['remaining_omissions']} |"
+    """Format entry as table row.
+    
+    File: wikilink format [[raw/<path>]]
+    Product Path: string path (no wikilink)
+    """
+    file_field = entry['file']
+    if not file_field.startswith('[['):
+        file_field = to_wikilink(file_field)
+    
+    return f"| {file_field} | {entry['type']} | {entry['summary']} | {entry['preprocess_status']} | {entry['product_path']} | {entry['compile_status']} | {entry['last_processed']} | {entry['remaining_omissions']} |"
 
 
 def update_registry(kb_dir: Path, file_path: str, file_type: str, 
