@@ -41,13 +41,13 @@ migu init my-legal-kb --rules legal
 
 ### Execution Flow
 
-1. Check if `<target-dir>` exists (error if exists)
-2. Validate rules configuration
-3. Create directory structure (from structure.json)
-4. Install skills (from skills.json)
-5. Create skills-lock.json
-6. Copy template files (index.md, log.md, raw-registry.md)
-7. Copy AGENTS.md
+1. Check if `<target-dir>` exists
+2. Validate three-party consistency
+3. Merge configuration (inherit minimal + override)
+4. Create directory structure
+5. Install skills
+6. Create skills-lock.json
+7. Copy template files (preserve frontmatter, dynamic index.md)
 
 ### Error Handling
 
