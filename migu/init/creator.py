@@ -170,8 +170,11 @@ def _create_template_files(target_path: Path, rules_name: str) -> None:
             sections_content = _generate_index_sections(structure)
             template_content = template_content + sections_content
         
+        # Rename kb-README.md to README.md
+        target_filename = "README.md" if filename == "kb-README.md" else filename
+        
         # Write to knowledge base root
-        (target_path / filename).write_text(template_content)
+        (target_path / target_filename).write_text(template_content)
     
     # Copy AGENTS.md (not in templates/, separate inheritance logic)
     rules_dir = resolve_rules(rules_name)
