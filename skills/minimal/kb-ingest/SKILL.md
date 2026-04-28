@@ -15,15 +15,10 @@ version: 1.0
 1. **扫描 raw/ 目录**：调用 `scan_raw.py` 检测所有文件（递归，排除 .extracted/）
 2. **对比 raw-registry.md**：找出未记录的文件，准备添加新条目
 3. **处理文件**：
-   - **markdown**：调用 `normalize_markdown.py` 检查 BOM 和康熙部首/CJK 部首。有修复时输出到 `raw/.extracted/`，返回 JSON 状态（status、output_path、issues）；无修复时不输出，返回 status: skipped。
-   - **PDF**：调用 `convert_pdf.py` 转换为 markdown，输出到 raw/.extracted/
-   - **image**：无需处理，直接引用
-4. **验证**：调用 `validate_batch.py` 检查 raw-registry.md 格式
-5. **更新 raw-registry.md**（根目录）：
-   - 预处理状态：已处理 / 无需处理
-   - 产物路径：有产物时记录路径，无产物时 `-`
-   - 最近处理日期：当前日期
-6. **更新 log.md**（根目录）：追加 ingest 操作记录
+   - **markdown**：调用 `normalize_markdown.py` 检查 BOM 和康熙部首/CJK 部首。有修复时输出到 `raw/.extracted/`，返回 JSON 状态；无修复时不输出，返回 status: skipped。然后调用 `update_registry.py` 更新 registry。
+   - **PDF**：调用 `convert_pdf.py` 转换为 markdown，输出到 raw/.extracted/，调用 `update_registry.py` 更新 registry。
+   - **image**：无需处理，直接引用，调用 `update_registry.py` 记录（status: skipped）
+4. **更新 log.md**（根目录）：追加 ingest 操作记录
 
 ## 类型判断
 
@@ -46,9 +41,10 @@ version: 1.0
 | script | 用途 | 调用时机 | 参数 | 依赖类型 | 返回值 |
 |--------|------|---------|------|---------|--------|
 | scan_raw.py | 扫描 raw/ 目录，检测新文件 | 步骤 1：检测新文件 | <kb_dir> | 必须 | stdout: 文件路径|类型 |
-| validate_batch.py | 验证 raw-registry.md 格式 | 步骤 4：验证格式 | - | 必须 | 无 |
+| validate_batch.py | 验证 raw-registry.md 格式 | 步骤 3 后：整体验证 | - | 可选 | 无 |
 | normalize_markdown.py | 规范化 markdown 文件 | 步骤 3：处理 markdown | <input_file> <raw_dir> | 必须 | stdout: JSON 状态，stderr: 日志 |
 | convert_pdf.py | 转换 PDF 为 markdown | 步骤 3：处理 PDF | - | 必须 | 无 |
+| update_registry.py | 更新 raw-registry.md 条目 | 步骤 3：每个文件处理后 | <kb_dir> --file <path> --type <type> --status <status> [--output <path>] | 必须 | stdout: 更新确认 |
 
 依赖类型说明：
 - 必须：流程步骤明确依赖该 script
@@ -67,6 +63,19 @@ stdout 输出 JSON：
 stderr 输出日志：
 - 有修复：`FIXED: <input> -> <output>`
 - 无修复：`OK: <input>`
+
+## raw-registry.md 格式约定
+
+**使用 string path 格式，不使用 wikilink**：
+
+| 字段 | 格式 | 示例 |
+|------|------|------|
+| File | 相对路径（无 `[[]]`） | `史记/本纪/秦本纪.md` |
+| Product Path | 相对路径（无 `[[]]`）或 `-` | `.extracted/史记/本纪/秦本纪.md` 或 `-` |
+
+**错误示例**（不要使用）：
+- `[[raw/史记/本纪/秦本纪.md]]`
+- `[[raw/.extracted/史记/本纪/秦本纪.md]]`
 
 ## 输出摘要
 
