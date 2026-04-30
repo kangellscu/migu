@@ -47,10 +47,10 @@ def parse_registry(content: str) -> tuple[list[str], list[dict]]:
     in_table = False
     
     for line in lines:
-        if line.startswith('| File |'):
+        if line.startswith('| File') and 'Type' in line:
             in_table = True
             header_lines.append(line)
-        elif line.startswith('|------|'):
+        elif line.startswith('|') and '---' in line and line.count('---') >= 3:
             header_lines.append(line)
         elif in_table and line.startswith('|') and not line.startswith('|------|'):
             parts = [p.strip() for p in line.split('|')]
@@ -131,7 +131,7 @@ def update_registry(kb_dir: Path, file_path: str, file_type: str,
     new_lines = header_lines.copy()
     table_start = None
     for i, line in enumerate(new_lines):
-        if line.startswith('| File |'):
+        if line.startswith('| File') and 'Type' in line:
             table_start = i
             break
     

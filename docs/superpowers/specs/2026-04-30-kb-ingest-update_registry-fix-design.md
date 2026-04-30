@@ -23,18 +23,29 @@ kb-ingest 处理两个新文件时（`Ontology Design Best Practices - Part I.md
 
 ### 问题代码位置
 文件：`.agents/skills/kb-ingest/scripts/update_registry.py`
-函数：`parse_registry()` (第 42-74 行)
-问题行：第 50 行、第 53 行
+
+**三处问题点**：
+
+| 位置 | 函数 | 行号 | 问题代码 |
+|------|------|------|----------|
+| 问题1 | parse_registry() | 50 | `startswith('| File |')` |
+| 问题2 | parse_registry() | 53 | `startswith('|------|')` |
+| **问题3** | **update_registry()** | **134** | **`startswith('| File |')`** |
 
 ```python
-# 问题1：标题行匹配
+# 问题1：标题行匹配（parse_registry 第 50 行）
 if line.startswith('| File |'):
     in_table = True
     header_lines.append(line)
 
-# 问题2：分隔符行匹配
+# 问题2：分隔符行匹配（parse_registry 第 53 行）
 elif line.startswith('|------|'):
     header_lines.append(line)
+
+# 问题3：表格定位（update_registry 第 134 行）
+if line.startswith('| File |'):
+    table_start = i
+    break
 ```
 
 ### 问题机制
@@ -111,22 +122,34 @@ elif line.startswith('|------|'):
 
 ### 方案一：修改标题行和分隔符行匹配逻辑（已实施）
 
-修改 `parse_registry()` 第 50 行和第 53 行：
+修改三处问题点：
 
 ```python
-# 原代码
+# 原代码（三处）
+# parse_registry 第 50 行
 if line.startswith('| File |'):
     in_table = True
     header_lines.append(line)
+# parse_registry 第 53 行
 elif line.startswith('|------|'):
     header_lines.append(line)
+# update_registry 第 134 行
+if line.startswith('| File |'):
+    table_start = i
+    break
 
 # 修复后
+# parse_registry 第 50 行
 if line.startswith('| File') and 'Type' in line:
     in_table = True
     header_lines.append(line)
+# parse_registry 第 53 行
 elif line.startswith('|') and '---' in line and line.count('---') >= 3:
     header_lines.append(line)
+# update_registry 第 134 行
+if line.startswith('| File') and 'Type' in line:
+    table_start = i
+    break
 ```
 
 **优点**：
