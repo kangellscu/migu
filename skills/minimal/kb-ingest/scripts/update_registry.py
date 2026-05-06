@@ -18,23 +18,32 @@ from pathlib import Path
 def normalize_path(path: str) -> str:
     """Remove wikilink format and extract clean path for comparison.
     
+    Preserves Unicode characters for matching against actual filenames.
+    This ensures Obsidian wikilinks match the exact file encoding.
+    
     Examples:
         "[[raw/史记/本纪/秦本纪.md]]" -> "史记/本纪/秦本纪.md"
         "[[raw/.extracted/史记/本纪/秦本纪.md]]" -> ".extracted/史记/本纪/秦本纪.md"
         "史记/本纪/秦本纪.md" -> "史记/本纪/秦本纪.md"
+        "Palantir's Ontology.md" -> "Palantir's Ontology.md"  # Unicode preserved (U+2019)
     """
     if path.startswith('[[') and path.endswith(']]'):
         path = path[2:-2]
         if path.startswith('raw/'):
             path = path[4:]
+    
     return path
 
 
 def to_wikilink(path: str) -> str:
     """Convert path to wikilink format for File field.
     
+    Preserves original Unicode characters to match actual filename encoding.
+    This ensures Obsidian wikilinks work correctly.
+    
     Examples:
         "史记/本纪/秦本纪.md" -> "[[raw/史记/本纪/秦本纪.md]]"
+        "Palantir's Ontology.md" -> "[[raw/Palantir's Ontology.md]]"  # Unicode U+2019 preserved
     """
     return f"[[raw/{path}]]"
 
@@ -107,7 +116,9 @@ def update_registry(kb_dir: Path, file_path: str, file_type: str,
     
     found = False
     for entry in entries:
-        if normalize_path(entry['file']) == file_path:
+        # Compare paths directly (Unicode characters must match exactly for Obsidian)
+        if normalize_path(entry['file']) == normalize_path(file_path):
+            # Update entry with correct path (preserves Unicode)
             entry['file'] = file_path
             entry['type'] = file_type
             entry['preprocess_status'] = '已处理' if status == 'processed' else '无需处理'
